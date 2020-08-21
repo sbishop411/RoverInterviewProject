@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <!-- We may want to move this to another location in the /server directory. -->
+    <head>
+        <meta charset="UTF-8">
+        <base href="/">
+
+        <title>Rover Interview Project</title>
+
+        <!-- TODO: Convert these to be references to public CDNs. -->
+    <!-- Minified Includes -->
+        <!-- CSS Includes -->
+        <link rel="stylesheet" href="bower_components/angular-material/angular-material.min.css">
+
+        <!-- jQuery library -->
+        <script src="bower_components/jquery/dist/jquery.min.js"></script>
+
+        <!-- Angular Includes -->
+        <script src="bower_components/angular/angular.min.js"></script>
+        <script src="bower_components/angular-route/angular-route.min.js"></script>
+
+        <!-- Angular Material library -->
+        <script src="bower_components/angular-animate/angular-animate.min.js"></script>
+        <script src="bower_components/angular-aria/angular-aria.min.js"></script>
+        <script src="bower_components/angular-messages/angular-messages.min.js"></script>
+        <script src="bower_components/angular-material/angular-material.min.js"></script>
+
+        <!-- Angular Material Icons -->
+        <script src="bower_components/angular-material-icons/angular-material-icons.min.js"></script>
+
+    <!-- Verbose Includes -->
+    <!--
+        <!-- CSS Includes - ->
+        <link rel="stylesheet" href="./bower_components/angular-material/angular-material.css">
+
+        <!-- jQuery library - ->
+        <script src="bower_components/jquery/dist/jquery.js"></script>
+
+        <!-- Angular Includes - ->
+        <script src="bower_components/angular/angular.js"></script>
+        <script src="bower_components/angular-route/angular-route.js"></script>
+
+        <!-- Angular Material library - ->
+        <script src="bower_components/angular-animate/angular-animate.js"></script>
+        <script src="bower_components/angular-aria/angular-aria.js"></script>
+        <script src="bower_components/angular-messages/angular-messages.js"></script>
+        <script src="bower_components/angular-material/angular-material.js"></script>
+        
+        <!-- Angular Material Icons - ->
+        <script src="bower_components/angular-material-icons/angular-material-icons.js"></script>
+    -->
+
+        <!-- Angular Application Includes -->
+        <!-- TODO: Implement uglify and replace this with a reference to the minified file -->
+        <script src="client/controllers/MainController.js"></script>
+        <script src="client/controllers/SitterController.js"></script>
+        <script src="client/services/SitterService.js"></script>
+        <script src="client/routes.js"></script>
+        <script src="client/app.js"></script>
+        
+    </head>
+    <body ng-app="RoverInterviewProjectApp" ng-controller="MainController">
+        <md-content class="md-padding">
+            <md-toolbar>
+                <div class="md-toolbar-tools" >
+                    <h2 flex md-truncate><a class="navbar-brand" href="/">Scott's Rover.com Interview Project</a></h2>
+            
+                    <md-button class="md-icon-button" href="https://www.facebook.com/sbishop411" aria-label="Facebook">
+                        <ng-md-icon icon="facebook-box" style="fill: white"></ng-md-icon>
+                    </md-button>
+            
+                    <md-button class="md-icon-button" href="https://twitter.com/ScottBishopSays" aria-label="Twitter">
+                        <ng-md-icon icon="twitter" style="fill: white"></ng-md-icon>
+                    </md-button>
+            
+                    <md-button class="md-icon-button" href="https://www.linkedin.com/in/scottandrewbishop/" aria-label="LinkedIn">
+                        <ng-md-icon icon="linkedin-box" style="fill: white"></ng-md-icon>
+                    </md-button>
+            
+                </div>
+            </md-toolbar>
+
+            <div layout="row">
+                <div flex="25"></div>
+                <div flex layout="column">
+                    <md-nav-bar md-no-ink-bar="disableInkBar" md-selected-nav-item="currentNavItem" nav-bar-aria-label="navigation links">
+                        <md-nav-item md-nav-href="/" name="Home" value="Home">Home</md-nav-item>
+                        <md-nav-item md-nav-href="/sitters" name="Sitter List" value="Sitter List">Sitter List</md-nav-item>
+                    </md-nav-bar>
+
+                    <!-- This div will contain all of the Angular dynamic content. -->
+                    <div ng-view></div>
+                </div>
+                <div flex="25"></div>
+            </div>
+        </md-content>
+    </body>
+</html>

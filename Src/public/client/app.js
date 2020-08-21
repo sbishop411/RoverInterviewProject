@@ -1,0 +1,1 @@
+angular.module("RoverInterviewProjectApp", ["ngRoute", "routes", "ngMaterial", "ngMdIcons", "MainController", "SitterController", "SitterService"]);

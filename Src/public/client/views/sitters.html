@@ -1,0 +1,62 @@
+<div layout="column" ng-controller="SitterController">
+
+    <!-- Filter value section -->
+    <section>
+        <md-card layout-padding>
+            <form ng-submit="search()" style="margin-bottom: 0px;">
+            
+                <md-card-title style="padding-top: 6px; padding-bottom: 8px;">
+                    <md-card-title-text>
+                        <span class="md-headline">Search Criteria</span>
+                    </md-card-title-text>
+                </md-card-title>
+
+                <md-input-container class="md-block" flex-gt-sm style="margin-bottom: 4px;">
+                    <label>Average Rating</label>
+                    <input required type="number" min="1" max="5" ng-model="query.RatingsScore">
+                </md-input-container>
+
+                <md-input-container class="md-block" flex-gt-sm style="margin-bottom: 4px;">
+                    <md-checkbox name="showOverallSitterRank" ng-model="showOverallSitterRank">
+                        Show Overall Sitter Ranks
+                    </md-checkbox>
+                </md-input-container>
+
+                <md-card-actions layout="row" layout-align="end center">
+                    <md-button class="md-raised" type="submit">Search</md-button>
+                </md-card-actions>
+            </form>
+        </md-card>
+    </section>
+    <br />
+
+    <!-- Result grid section -->
+    <section data-ng-init="listAll()">
+        <md-card layout-padding>
+            <md-list-item class="md-3-line" ng-repeat="sitter in sitters" ng-click="null" style="border-bottom: 1px solid lightGray;">
+                <div layout="column" style="width: 100%;">
+                    <div layout="row">
+                        <div flex="18" style="margin: auto; align-items: center; justify-content: center; text-align: center;">
+                            <img flex ng-src="{{sitter.Image}}" class="md-avatar" style="width: 100px; height: 100px;  vertical-align: middle;" alt="{{sitter.Name}}"/>
+                        </div>
+                        <div layout="column" flex="15" style="margin: auto; text-align: center;  border-left: 1px solid lightGray; border-right: 1px solid lightGray;    ">
+                            <p style="line-height: 16px; margin-bottom: 4px; margin-top: 6px;"><b>{{sitter.RatingsScore | number: 1}} / 5</b></p>
+                            <p class="md-caption" style="line-height: 16px;">Rating</p>
+                            <div style="line-height: 4px; fill: lightGray; border: 2px solid lightGray; width: 80%; margin: auto;"></div>
+                            <p style="line-height: 16px; margin-bottom: 4px; margin-top: 12px;"><b>{{sitter.NumberOfStays}}</b></p>
+                            <p class="md-caption" style="line-height: 16px;">Review<span ng-if="sitter.NumberOfStays > 1">s</span></p>
+                        </div>
+                        <div flex class="md-list-item-text" style="padding-left: 16px;">
+                            <h2>{{sitter.Name}}</h4>
+                            <p><b>Phone Number: </b>{{sitter.PhoneNumber}}</p>
+                            <p><b>Email Address: </b>{{sitter.EmailAddress}}</p>
+                        </div>
+                    </div>
+                    <div ng-show="showOverallSitterRank" style="border-top: 1px solid lightGray">
+                        <p><b>Overall Sitter Rank: </b>{{sitter.OverallSitterRank| number: 3}}</p>
+                    </div>
+                </div>
+            </md-list-item>
+        </md-card>
+    </section>
+</div>
