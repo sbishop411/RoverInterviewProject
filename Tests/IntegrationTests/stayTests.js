@@ -1,14 +1,16 @@
 // Mongoose and schema includes.
-var config = require(__dirname + "/../config/config");
+var config = require(__dirname + "/../../config/config");
 
 
 let testMongoose = require("mongoose");
-require(__dirname + "/../Src/server/models/Sitter");
-require(__dirname + "/../Src/server/models/Stay");
-require(__dirname + "/../Src/server/models/Owner");
-let Sitter = testMongoose.model("Sitter");
-let Stay = testMongoose.model("Stay");
-let Owner = testMongoose.model("Owner");
+testMongoose.connect(config.mongoDbUrl);
+
+require(__dirname + "/../../Src/server/models/Sitter");
+require(__dirname + "/../../Src/server/models/Stay");
+require(__dirname + "/../../Src/server/models/Owner");
+//let Sitter = testMongoose.model("Sitter");
+//let Stay = testMongoose.model("Stay");
+//let Owner = testMongoose.model("Owner");
 
 // Get Chai set up.
 let chai = require("chai");
@@ -17,7 +19,7 @@ let should = chai.should();
 chai.use(chaiHttp);
 
 // This is the main webserver.
-let server = require(__dirname + "/../Src/server");
+let server = require(__dirname + "/../../Src/server");
 
 // Parent block for Stays
 describe("Stays", function ()
@@ -27,7 +29,11 @@ describe("Stays", function ()
 
     before(function (done)
     {
-        testMongoose.connect(config.mongoDbUrl);
+        //testMongoose.connect(config.mongoDbUrl);
+
+        let Sitter = testMongoose.model("Sitter");
+        let Stay = testMongoose.model("Stay");
+        let Owner = testMongoose.model("Owner");
         done();
     });
 
@@ -125,7 +131,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -179,7 +185,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -233,7 +239,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -287,7 +293,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -341,7 +347,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -396,7 +402,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -451,7 +457,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -505,7 +511,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -543,10 +549,10 @@ describe("Stays", function ()
         });
 
         //-------------------------------------------------------------------------------------------------------------------
-        // Attempt to create a stay with a non-existant Owner id
+        // Attempt to create a stay with a non-existent Owner id
         //-------------------------------------------------------------------------------------------------------------------
         // TODO: This feature is not yet implemented.
-        it.skip("it should not POST a stay with a non-existant Owner id", async function()
+        it.skip("it should not POST a stay with a non-existent Owner id", async function()
         {
             return new Promise(async function(resolve)
             {
@@ -558,7 +564,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -596,7 +602,7 @@ describe("Stays", function ()
         });
 
         //-------------------------------------------------------------------------------------------------------------------
-        // Associated sitter's NumberOfStays is updated when a stayis added
+        // Associated sitter's NumberOfStays is updated when a stay is added
         //-------------------------------------------------------------------------------------------------------------------
         // TODO: Implement this test.
         it.skip("it should update the sitter's NumberOfStays when a stay is added", function(done)
@@ -641,7 +647,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -714,7 +720,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -853,7 +859,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -971,7 +977,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -1045,7 +1051,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",
@@ -1172,7 +1178,7 @@ describe("Stays", function ()
                 });
                 
                 var validSitter = new Sitter({
-                    Name: "Keystal R",
+                    Name: "Krystal R",
                     Image: "http://cdn1-www.dogtime.com/assets/uploads/gallery/pit-bull-dog-breed-pictures/pit-bull-dog-breed-picture-10.jpg",
                     PhoneNumber: "12223334444",
                     EmailAddress: "kr@hotmail.com",

@@ -1,42 +1,65 @@
-// If a NODE_ENV wasn't defined, assume that we're running in a development environment.
-if(typeof process.env.NODE_ENV === 'undefined' || process.env.NODE_ENV === null)
+async function main()
 {
-    process.env.NODE_ENV = "development";
+    // If a NODE_ENV wasn't defined, assume that we're running in a development environment.
+    if (typeof process.env.NODE_ENV === 'undefined' || process.env.NODE_ENV === null)
+    {
+        process.env.NODE_ENV = "development";
+    }
+
+    var express = require("express");
+    var mongoose = require("mongoose");
+    var bodyParser = require("body-parser");
+
+    // Connect to MongoDB.
+    console.log("Waiting for 5 seconds to ensure MongoDB is started...");
+    await sleep(5 * 1000);
+
+    try
+    {
+        // TODO: Remove this debug message.
+        console.log("Attempting to connect to MongoDB with the following connection string: " + process.env.MONGODB_CONNECTION_STRING);
+        mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { useNewUrlParser: true });
+    }
+    catch (error)
+    {
+        console.log("The following error occurred while attempting to connect to MongoDB:");
+        console.log(error);
+        process.exit(1);
+    }
+
+    console.log("Successfully connected to database: " + process.env.MONGO_INITDB_DATABASE);
+
+    // Create our Express application.
+    var app = express();
+
+    // Set up bodyParser
+    app.use(bodyParser.json());
+    app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
+    app.use(bodyParser.urlencoded({ extended: true }));
+
+    // Set the location that static files like images will be served from.
+    app.use(express.static(__dirname + "/public"));
+
+    // Get the routes for our APIs that we defined in routes.js
+    require("./server/routes")(app);
+
+    //app.listen(config.port);
+    app.listen(process.env.SERVER_PORT);
+
+
+    //console.log("Rover Interview Project server now running at http://localhost:" + config.port);
+    console.log("Rover Interview Project server now running at http://localhost:" + process.env.SERVER_PORT);
+
+    // Export the server so we can use it for testing.
+    module.exports = app;
 }
 
-// TODO: This probably has to change when we move everything into a Src directory.
-// Get the appropriate configuration file.
-var config = require(__dirname + "/../config/config");
+function sleep(ms)
+{
+    return new Promise((resolve) =>
+    {
+        setTimeout(resolve, ms);
+    });
+}
 
-// Includes
-var express = require("express");
-var mongoose = require("mongoose");
-var bodyParser = require("body-parser");
-
-// Create our Express application.
-var app = express();
-
-// Connect to MongoDB.
-mongoose.connect(config.mongoDbUrl);
-var dbArray = config.mongoDbUrl.split("/");
-console.log("Connected to database: " + config.mongoDbUrl.split("/").slice(-1)[0]);
-
-// Set up bodyParser
-app.use(bodyParser.json()); 
-app.use(bodyParser.json({ type: 'application/vnd.api+json' })); 
-app.use(bodyParser.urlencoded({ extended: true })); 
-
-// Set the location that static files like images will be served from.
-app.use(express.static(__dirname + "/public"));
-
-// Get the routes for our APIs that we defined in routes.js
-require("./server/routes")(app);
-
-// Start listening for requests.
-app.listen(config.port);
-
-// Log that the server is now up and running.
-console.log("Rover Interview Project server now running at http://localhost:" + config.port);
-
-// Export the server so we can use it for testing.
-module.exports = app;
+main();

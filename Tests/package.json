@@ -1,0 +1,17 @@
+{
+  "name": "rover_interview_project_tests",
+  "version": "0.1.0",
+  "description": "Tests for the RoverInterviewProject repo.",
+  "scripts": {
+    "test": "set NODE_ENV=test& mocha ./ --recursive"
+  },
+  "main": "tests.js",
+  "author": "Scott Bishop",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^8.1.1",
+    "mongoose": "^5.10.0"
+  }
+}

@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+    MongoDB:
+        image: "mongo"
+        container_name: "MongoDB"
+        environment:
+            - MONGO_INITDB_DATABASE
+            - MONGO_INITDB_ROOT_USERNAME
+            - MONGO_INITDB_ROOT_PASSWORD
+            - MONGO_SERVER_USERNAME
+            - MONGO_SERVER_PASSWORD
+        ports:
+            - "${MONGO_INITDB_PORT}:${MONGO_INITDB_PORT}"
+        volumes:
+            - "mongodb-data:/data/db"
+            - "./config/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh"
+        command: --port ${MONGO_INITDB_PORT} --auth
+        networks:
+            - network
+
+    MongoExpress:
+        image: "mongo-express"
+        container_name: "MongoExpress"
+        environment:
+            - ME_CONFIG_BASICAUTH_USERNAME
+            - ME_CONFIG_BASICAUTH_PASSWORD
+            - ME_CONFIG_MONGODB_SERVER
+            - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_INITDB_ROOT_USERNAME}
+            - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+            - ME_CONFIG_MONGODB_PORT=${MONGO_INITDB_PORT}
+            - VCAP_APP_PORT
+        ports:
+            - "${VCAP_APP_PORT}:${VCAP_APP_PORT}"
+        networks:
+            - network
+
+    rover-interview-project:
+        container_name: "RoverInterviewProject"
+        build:
+            context: ./Src/
+            dockerfile: ./Dockerfile
+        depends_on: 
+            - "MongoDB"
+        environment:
+            - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@${ME_CONFIG_MONGODB_SERVER}:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}
+            - MONGO_INITDB_DATABASE
+            - MONGO_INITDB_PORT
+            - MONGO_SERVER_USERNAME
+            - MONGO_SERVER_PASSWORD
+            - SERVER_PORT
+        ports:
+            - "${SERVER_PORT}:${SERVER_PORT}"
+        networks:
+            - network
+
+volumes:
+    mongodb-data:
+
+networks:
+    network: {}
