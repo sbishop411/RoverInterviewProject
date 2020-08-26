@@ -3,25 +3,9 @@
 mongo <<EOF
 conn = new Mongo();
 db = conn.getDB("$MONGO_INITDB_DATABASE");
-
 db.createCollection("Sitters");
 db.createCollection("Owners");
 db.createCollection("Stays");
-
-db.createRole({
-	role: 'readWrite',
-	privileges: [
-		{
-			resource: { db: "$MONGO_INITDB_DATABASE", collection: '' },
-			actions: [ 'find', 'insert', 'remove', 'update' ]
-		}
-	],
-	roles: []
-});
-
-db.createUser({
-	user: "$MONGO_SERVER_USERNAME",
-	pwd: "$MONGO_SERVER_PASSWORD",
-	roles: [ 'readWrite' ]
-});
+db.createRole({ role: "readWrite", privileges: [ { resource: { db: "$MONGO_INITDB_DATABASE", collection: "" }, actions: [ "find", "insert", "remove", "update" ] } ], roles: [] });
+db.createUser({ user: "$MONGO_SERVER_USERNAME", pwd: "$MONGO_SERVER_PASSWORD", roles: [ "readWrite" ] });
 EOF

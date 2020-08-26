@@ -2,7 +2,7 @@ version: "3"
 
 services:
     MongoDB:
-        image: "mongo"
+        image: "mongo:4.4"
         container_name: "MongoDB"
         environment:
             - MONGO_INITDB_DATABASE
@@ -20,7 +20,7 @@ services:
             - network
 
     MongoExpress:
-        image: "mongo-express"
+        image: "mongo-express:0.54"
         container_name: "MongoExpress"
         environment:
             - ME_CONFIG_BASICAUTH_USERNAME
@@ -43,7 +43,7 @@ services:
         depends_on: 
             - "MongoDB"
         environment:
-            - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@${ME_CONFIG_MONGODB_SERVER}:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}
+            - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@MongoDB:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}
             - MONGO_INITDB_DATABASE
             - MONGO_INITDB_PORT
             - MONGO_SERVER_USERNAME
