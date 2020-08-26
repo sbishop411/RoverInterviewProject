@@ -1,13 +1,15 @@
 // Mongoose and schema includes.
-var config = require(__dirname + "/../config/config");
+var config = require(__dirname + "/../../config/config");
 
 let testMongoose = require("mongoose");
-require(__dirname + "/../Src/server/models/Sitter");
-require(__dirname + "/../Src/server/models/Stay");
-require(__dirname + "/../Src/server/models/Owner");
-let Sitter = testMongoose.model("Sitter");
-let Stay = testMongoose.model("Stay");
-let Owner = testMongoose.model("Owner");
+testMongoose.connect(config.mongoDbUrl);
+
+require(__dirname + "/../../Src/server/models/Sitter");
+require(__dirname + "/../../Src/server/models/Stay");
+require(__dirname + "/../../Src/server/models/Owner");
+//let Sitter = testMongoose.model("Sitter");
+//let Stay = testMongoose.model("Stay");
+//let Owner = testMongoose.model("Owner");
 
 // Get Chai set up.
 let chai = require("chai");
@@ -16,7 +18,7 @@ let should = chai.should();
 chai.use(chaiHttp);
 
 // This is the main webserver.
-let server = require(__dirname + "/../Src/server");
+let server = require(__dirname + "/../../Src/server");
 
 // Parent block for Sitters
 describe("Sitters", function()
@@ -27,6 +29,11 @@ describe("Sitters", function()
     before(function (done)
     {
         testMongoose.connect(config.mongoDbUrl);
+
+        let Sitter = testMongoose.model("Sitter");
+        let Stay = testMongoose.model("Stay");
+        let Owner = testMongoose.model("Owner");
+        
         done();
     });
     
