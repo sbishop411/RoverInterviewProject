@@ -16,8 +16,6 @@ async function main()
 
     try
     {
-        // TODO: Remove this debug message.
-        console.log("Attempting to connect to MongoDB with the following connection string: " + process.env.MONGODB_CONNECTION_STRING);
         mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { useNewUrlParser: true });
     }
     catch (error)
@@ -31,8 +29,6 @@ async function main()
 
     // Create our Express application.
     var app = express();
-
-    // Set up bodyParser
     app.use(bodyParser.json());
     app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
     app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,11 +39,7 @@ async function main()
     // Get the routes for our APIs that we defined in routes.js
     require("./server/routes")(app);
 
-    //app.listen(config.port);
     app.listen(process.env.SERVER_PORT);
-
-
-    //console.log("Rover Interview Project server now running at http://localhost:" + config.port);
     console.log("Rover Interview Project server now running at http://localhost:" + process.env.SERVER_PORT);
 
     // Export the server so we can use it for testing.

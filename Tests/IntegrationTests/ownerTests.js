@@ -1,7 +1,6 @@
 // Mongoose and schema includes.
 var config = require(__dirname + "/../../config/config");
 
-
 console.log("Connection URL: " + config.mongoDbUrl);
 
 let testMongoose = require("mongoose");
@@ -23,16 +22,14 @@ let server = require(__dirname + "/../../Src/server");
 describe("Owners", function ()
 {
     // The default of 2 seconds probably isn't enough, so bump it up to 10.
-    this.timeout(10000);
-
+    this.timeout(10 * 1000);
 
     before(function (done)
     {
         //testMongoose.connect(config.mongoDbUrl);
-        let Owner = testMongoose.model("Owner");
+        var Owner = testMongoose.model("Owner");
         done();
     });
-
 
     // Empty out the Owner collection before every test. This will help keep our testing environment clean and our dependencies in check.
     beforeEach(function (done)
@@ -45,12 +42,10 @@ describe("Owners", function ()
         });
     });
 
-
     after(function (done)
     {
         return testMongoose.disconnect(done);
     });
-
 
     //===================================================================================================================
     // Create Owner tests (POST to /api/owners)
