@@ -1,5 +1,5 @@
-var mongoose = require("mongoose");
-var Schema = mongoose.Schema;
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 var SitterSchema = new Schema(
 {
@@ -47,7 +47,6 @@ var SitterSchema = new Schema(
     }
 },
 {
-    // This is the name of the corresponding MongoDB collection.
     collection: "Sitters",
     toJSON:
     {
@@ -97,7 +96,7 @@ SitterSchema.pre("remove", function(next, done)
 {
     for(var i = 0; i < this.Stays.length; i++)
     {
-        // TODO: There's a bug in this functionality. Dependent Syaus are not currently being removed when the sitter they're associated with is deleted.
+        // TODO: There's a bug in this functionality. Dependent Stays are not currently being removed when the sitter they're associated with is deleted.
         // This odd way of referencing the Stay model is sso we can avoid a circular definition dependency. 
         mongoose.model("Stay").remove({id: mongoose.Types.ObjectId(this.Stays[i].id)}, function(error)
         {
@@ -144,4 +143,14 @@ SitterSchema.methods.RecalculateRanks = function()
     }
 };
 
-mongoose.model("Sitter", SitterSchema);
+SitterSchema.methods.equals = function (other)
+{
+    return this.Name == other.Name
+        && this.Image == other.Image
+        && this.PhoneNumber == other.PhoneNumber
+        && this.EmailAddress == other.EmailAddress
+        && this.OverallSitterRank == other.OverallSitterRank
+        && this.RatingsScore == other.RatingsScore;
+};
+
+module.exports = mongoose.model("Sitter", SitterSchema);

@@ -1,9 +1,6 @@
-require("./Sitter");
-//require("./Owner");
-var mongoose = require("mongoose");
-var Schema = mongoose.Schema;
-var Sitter = mongoose.model("Sitter");
-//var Owner = mongoose.model("Owner");
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+const Sitter = require("./Sitter");
 
 var StaySchema = new Schema(
 {
@@ -26,6 +23,12 @@ var StaySchema = new Schema(
             }
         }
         */
+    },
+    Sitter:
+    {
+        type: Schema.Types.ObjectId,
+        ref: "Sitter",
+        required: [true, "The stay must be associated with a sitter."]
     },
     Dogs:
     {
@@ -55,8 +58,8 @@ var StaySchema = new Schema(
     {
         type: Number,
         required: true,
-        min: [1, "Stay ratings must be bewtween 1 and 5."],
-        max: [5, "Stay ratings must be bewtween 1 and 5."]
+        min: [1, "Stay ratings must be between 1 and 5."],
+        max: [5, "Stay ratings must be between 1 and 5."]
     }
 },
 {
@@ -67,7 +70,7 @@ var StaySchema = new Schema(
 // If the stay is being updated and the rating is changing, we need to recalculate the RatingsScore and OverallSitterRank for the sitter this belongs to.
 StaySchema.post("save", function(stay, next)
 {
-    // TODO: I'd like to see if there's a way to determine whether or not the Rating field specifcally was changed by the update.
+    // TODO: I'd like to see if there's a way to determine whether or not the Rating field specifically was changed by the update.
     var stayId = this.id;
 
     var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(stay.id)});
@@ -116,7 +119,7 @@ StaySchema.pre("remove", function(next)
                 if(sitter.Stays[i].id == stayId) sitterSpliceIndex = i;
             }
 
-            // If we've found a refernce to the Stay, splice it out of the list.
+            // If we've found a reference to the Stay, splice it out of the list.
             if(sitterSpliceIndex !== null && sitterSpliceIndex > -1) sitter.Stays.splice(sitterSpliceIndex, 1);
 
             sitter.save(function(error)
@@ -134,4 +137,15 @@ StaySchema.pre("remove", function(next)
     });
 });
 
-mongoose.model("Stay", StaySchema);
+StaySchema.methods.equals = function (other)
+{
+    return this.Owner == other.Owner
+        && this.Sitter == other.Sitter
+        && this.Dogs == other.Dogs
+        && this.StartDate == other.StartDate
+        && this.EndDate == other.EndDate
+        && this.ReviewText == other.ReviewText
+        && this.Rating == other.Rating;
+};
+
+module.exports = mongoose.model("Stay", StaySchema);

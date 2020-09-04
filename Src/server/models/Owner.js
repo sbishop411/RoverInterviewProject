@@ -1,7 +1,6 @@
-require("./Stay");
-var mongoose = require("mongoose");
-var Schema = mongoose.Schema;
-var Stay = mongoose.model("Stay");
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+const Stay = require("./Stay");
 
 var OwnerSchema = new Schema(
 {
@@ -28,10 +27,14 @@ var OwnerSchema = new Schema(
         type: String,
         trim: true,
         required: [true, "The owner must have a name."]
-    }
+    },
+    Stays:
+    [{
+        type: Schema.Types.ObjectId,
+        ref: "Stay"
+    }]
 },
 {
-    // This is the name of the corresponding MongoDB collection.
     collection: "Owners"
 });
 
@@ -41,6 +44,7 @@ OwnerSchema.pre("remove", function(next)
     var stayQuery = Stay.find({Owner: mongoose.Types.ObjectId(this.id)});
     stayQuery.populate("Owner").exec(function(error, stays)
     {
+        // TODO: Why are these 400 and 500? Something isn't right here.
         // If an error occurred, return a 400 response with the error message.
         if(error) next(response.status(400).send({message: error}));
 
@@ -57,4 +61,13 @@ OwnerSchema.pre("remove", function(next)
     });
 });
 
-mongoose.model("Owner", OwnerSchema);
+OwnerSchema.methods.equals = function (other)
+{
+    // This is JavaScript, so type safety really doesn't matter, right? Can't wait until we implement TypeScript...
+    return this.Name == other.Name
+        && this.Image == other.Image
+        && this.PhoneNumber == other.PhoneNumber
+        && this.EmailAddress == other.EmailAddress;
+};
+
+module.exports = mongoose.model("Owner", OwnerSchema);

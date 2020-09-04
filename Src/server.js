@@ -1,3 +1,5 @@
+var dataSeeder = require("./server/utilities/data-seeder/data-seeder");
+
 async function main()
 {
     // If a NODE_ENV wasn't defined, assume that we're running in a development environment.
@@ -16,7 +18,7 @@ async function main()
 
     try
     {
-        mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { useNewUrlParser: true });
+        await mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { useNewUrlParser: true });
     }
     catch (error)
     {
@@ -25,7 +27,11 @@ async function main()
         process.exit(1);
     }
 
+
     console.log("Successfully connected to database: " + process.env.MONGO_INITDB_DATABASE);
+
+    // Attempt to seed MongoDB with data.
+    await dataSeeder.seedData();
 
     // Create our Express application.
     var app = express();
