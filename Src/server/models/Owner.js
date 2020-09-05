@@ -67,4 +67,19 @@ OwnerSchema.methods.equals = function (other)
         && this.EmailAddress == other.EmailAddress;
 };
 
+OwnerSchema.methods.getIdentityQuery = function ()
+{
+    return {
+        Name: this.Name,
+        Image: this.Image,
+        PhoneNumber: this.PhoneNumber,
+        EmailAddress: this.EmailAddress
+    };
+};
+
+OwnerSchema.methods.toString = function ()
+{
+    return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;    
+}
+
 module.exports = mongoose.model("Owner", OwnerSchema);

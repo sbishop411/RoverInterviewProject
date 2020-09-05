@@ -116,4 +116,22 @@ StaySchema.methods.equals = function (other)
         && this.Rating == other.Rating;
 };
 
+StaySchema.methods.getIdentityQuery = function ()
+{
+    return {
+        Owner: this.Owner,
+        Sitter: this.Sitter,
+        Dogs: this.Dogs,
+        StartDate: this.StartDate,
+        EndDate: this.EndDate,
+        ReviewText: this.ReviewText,
+        Rating: this.Rating
+    };
+};
+
+StaySchema.methods.toString = function ()
+{
+    return `Owner: \"${this.Owner.Name}\", Sitter: \"${this.Sitter.Name}\", Dogs: \"${this.Dogs}\", StartDate: \"${this.StartDate}\", EndDate: \"${this.EndDate}\"`;
+}
+
 module.exports = mongoose.model("Stay", StaySchema);

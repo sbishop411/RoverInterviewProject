@@ -147,4 +147,19 @@ SitterSchema.methods.equals = function (other)
         && this.RatingsScore == other.RatingsScore;
 };
 
+SitterSchema.methods.getIdentityQuery = function ()
+{
+    return {
+        Name: this.Name,
+        Image: this.Image,
+        PhoneNumber: this.PhoneNumber,
+        EmailAddress: this.EmailAddress
+    };
+};
+
+SitterSchema.methods.toString = function ()
+{
+    return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;
+}
+
 module.exports = mongoose.model("Sitter", SitterSchema);

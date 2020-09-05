@@ -6,7 +6,6 @@ var owners = require("./controllers/OwnerController");
 module.exports = function(app)
 {
     app.route("/api/sitters")
-        // We should see if we can branch here. If we get a search parameter on the query string, can we call a different method?
         .get(sitters.GetAll)
         .post(sitters.Add);
     

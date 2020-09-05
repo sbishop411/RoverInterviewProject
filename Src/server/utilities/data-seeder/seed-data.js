@@ -15,9 +15,32 @@ module.exports = async function ()
 
 	let { owners, sitters, stays } = await normalizeData(reviews);
 
-	await saveOwners(owners);
-	await saveSitters(sitters);
+	await Owner.create({
+		Name: "Missy S.",
+		Image: "http://placekitten.com/g/500/500?user=238",
+		PhoneNumber: "+14341712430",
+		EmailAddress: "user8802@t-mobile.com"
+	});
+
+	await Owner.create({
+		Name: "David R.",
+		Image: "http://placekitten.com/g/500/500?user=255",
+		PhoneNumber: "+18470214729",
+		EmailAddress: "user7116@verizon.net"
+	});
+
+	await Sitter.create({
+		Name: "Jenny S.",
+		Image: "http://placekitten.com/g/500/500?user=340",
+		PhoneNumber: "+15583175693",
+		EmailAddress: "user7736@t-mobile.com"
+	});
+
+	await saveModels(owners, Owner, "owner", "owners");
+	await saveModels(sitters, Sitter, "sitter", "sitters");
+
 	await saveStays(stays);
+	//await saveModels(stays, Stay, "stay", "stays");
 }
 
 var loadData = async function ()
@@ -110,20 +133,71 @@ var normalizeData = async function (reviews)
 	}
 }
 
-// TODO: For each of these, we should check to see if the database already contains each record, and only insert if necessary.
-var saveOwners = async function (owners)
+var saveModels = async function (modelsToSave, mongooseModel, singularName, pluralName)
 {
-	
-	process.stdout.write("Saving owner data".padEnd(34, ".") + " ");
-	await Owner.insertMany(owners);
-	console.log(chalk.green("done."));
-}
+	process.stdout.write(`Saving ${singularName} data`.padEnd(34, ".") + " ");
 
-var saveSitters = async function (sitters)
-{
-	process.stdout.write("Saving Sitter data".padEnd(34, ".") + " ");
-	await Sitter.insertMany(sitters);
-	console.log(chalk.green("done."));
+	let skippedCount = 0;
+	let skippedModels = [];
+	let addedCount = 0;
+
+	for (const model of modelsToSave)
+	{
+		let searchResult;
+
+		try
+		{
+			searchResult = await mongooseModel.find(model.getIdentityQuery()).limit(1).exec();
+		}
+		catch (error)
+		{
+			console.log(`An error occurred while searching for a ${singularName}:`);
+			console.log(model.toString());
+			console.log(`addedCount: ${addedCount}`);
+			console.log(`skippedCount: ${skippedCount}`);
+			console.log(error);
+			process.exit(1);
+		}
+
+		if (searchResult.length === 0)
+		{
+			try
+			{
+				await mongooseModel.create(model);
+				addedCount++;
+			}
+			catch (error)
+			{
+				console.log(`An error occurred while attempting to add the following ${singularName}:`);
+				console.log(model.toString());
+				console.log(`addedCount: ${addedCount}`);
+				console.log(`skippedCount: ${skippedCount}`);
+				console.log(error);
+				process.exit(1);
+			}
+		}
+		else
+		{
+			skippedModels.push(model);
+			skippedCount++;
+		}
+	}
+
+	if (skippedCount === 0)
+	{
+		console.log(chalk.green("done.") + ` Added ${addedCount} ${pluralName}.`);
+	}
+	else
+	{
+		console.log(chalk.green("done.") + ` Added ${addedCount} ${pluralName}. Skipped ${skippedCount} existing ${pluralName}:`);
+		if (skippedCount < 10)
+		{
+			for (const skippedModel of skippedModels)
+			{
+				console.log("\t" + chalk.yellow("Skipped: ") + skippedModel.toString());
+			}
+		}
+	}
 }
 
 var saveStays = async function (stays)
