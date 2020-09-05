@@ -32,7 +32,7 @@ var SitterSchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "Stay"
     }],
-    // We're forced to store both of these denormalized values because we need to index them. This really, really sucks.
+    // We're forced to store both of these denormalized values because we need to index them.
     OverallSitterRank:
     {
         type: Number,
@@ -77,14 +77,12 @@ SitterSchema.virtual("NumberOfStays").get(function()
     return (this.Stays ? this.Stays.length : 0);
 });
 
-// If we save any changes to the sitter, we should recalculate the RatingsScore and OverallSitterRank.
 SitterSchema.pre("save", function(next, done)
 {
     this.RecalculateRanks();
     next();
 });
 
-// If we update the sitter, we should recalculate the RatingsScore and OverallSitterRank.
 SitterSchema.pre("update", function(next, done)
 {
     this.RecalculateRanks();
@@ -100,7 +98,6 @@ SitterSchema.pre("remove", function(next, done)
         // This odd way of referencing the Stay model is sso we can avoid a circular definition dependency. 
         mongoose.model("Stay").remove({id: mongoose.Types.ObjectId(this.Stays[i].id)}, function(error)
         {
-            // If an error occurred, return a 400 response with the error message.
             if(error) next(response.status(500).send({message: error}));
         });
     }
@@ -108,7 +105,6 @@ SitterSchema.pre("remove", function(next, done)
     next();
 });
 
-// Helper method to recalculate the RatingsScore and OverallSitterRank. NOTE: The Stays array MUST be populated with actual stays before running this.
 SitterSchema.methods.RecalculateRanks = function()
 {
     if(this.NumberOfStays == 0)
@@ -134,11 +130,9 @@ SitterSchema.methods.RecalculateRanks = function()
     }
     else
     {
-        // Determine how much each rating should be weighted into the overall score.
         var sitterScoreWeight = (this.NumberOfStays < 10 ? 1-(this.NumberOfStays/10) : 0);
         var ratingsScoreWeight = (this.NumberOfStays < 10 ? this.NumberOfStays/10: 1);
         
-        // Set the OverallSitterRank value.
         this.OverallSitterRank = (this.SitterScore * sitterScoreWeight) + (this.RatingsScore * ratingsScoreWeight);
     }
 };

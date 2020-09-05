@@ -10,6 +10,7 @@ services:
             - MONGO_INITDB_ROOT_PASSWORD
             - MONGO_SERVER_USERNAME
             - MONGO_SERVER_PASSWORD
+            - FORCE_COLOR=1
         ports:
             - "${MONGO_INITDB_PORT}:${MONGO_INITDB_PORT}"
         volumes:
@@ -30,6 +31,7 @@ services:
             - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
             - ME_CONFIG_MONGODB_PORT=${MONGO_INITDB_PORT}
             - VCAP_APP_PORT
+            - FORCE_COLOR=1
         ports:
             - "${VCAP_APP_PORT}:${VCAP_APP_PORT}"
         networks:
@@ -49,6 +51,7 @@ services:
             - MONGO_SERVER_USERNAME
             - MONGO_SERVER_PASSWORD
             - SERVER_PORT
+            - FORCE_COLOR=1
         ports:
             - "${SERVER_PORT}:${SERVER_PORT}"
         networks:

@@ -38,21 +38,18 @@ var OwnerSchema = new Schema(
     collection: "Owners"
 });
 
-// If an owner is going to be deleted, we should remove all of the reviews that they've left.
 OwnerSchema.pre("remove", function(next)
 {
     var stayQuery = Stay.find({Owner: mongoose.Types.ObjectId(this.id)});
     stayQuery.populate("Owner").exec(function(error, stays)
     {
-        // TODO: Why are these 400 and 500? Something isn't right here.
-        // If an error occurred, return a 400 response with the error message.
         if(error) next(response.status(400).send({message: error}));
 
+        // Since we're removing the Owner, we should remove all their associated Stays too.
         for(var i = 0; i < stays.length; i++)
         {
-            stays[i].remove(function(error)
+            stays[i].remove(function (error)
             {
-                // If an error occurred, return a 400 response with the error message.
                 if(error) next(response.status(500).send({message: error}));
             });
         }

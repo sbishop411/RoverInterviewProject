@@ -9,20 +9,6 @@ var StaySchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "Owner",
         required: [true, "The stay must be associated with an owner."]
-        // TODO: Due to circular dependencies, I don't know of a good way to validate this Owner id...
-        /*
-        ,validate:
-        {
-            validator: function(value)
-            {
-                Owner.findById(value)
-                    .exec(function(error, owner)
-                    {
-                        return (error || !owner) ? false : true;
-                    });
-            }
-        }
-        */
     },
     Sitter:
     {
@@ -63,32 +49,22 @@ var StaySchema = new Schema(
     }
 },
 {
-    // This is the name of the corresponding MongoDB collection.
     collection: "Stays"
 });
 
-// If the stay is being updated and the rating is changing, we need to recalculate the RatingsScore and OverallSitterRank for the sitter this belongs to.
 StaySchema.post("save", function(stay, next)
 {
-    // TODO: I'd like to see if there's a way to determine whether or not the Rating field specifically was changed by the update.
-    var stayId = this.id;
-
     var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(stay.id)});
     sitterQuery.populate("Stays").exec(function(error, sitter)
     {
-        // If an error occurred, return a 400 response with the error message.
         if(error) next(response.status(400).send({message: error}));
         
-        // We should always find a sitter, but just in case, we should check.
         if(sitter)
         {
-            // Even though we haven't changes the sitter, we need to invoke the save action, which will trigger the recalculation of the sitter's RatingsScore and OverallSitterRank.
+            // Calling save() here triggers Sitter.RecalculateRanks() and updated the sitter with the new correct value.
             sitter.save(function(error)
             {
-                // If an error occurred, return a 400 response with the error message.
                 if(error) next(response.status(400).send({message: error}));
-
-                next();
             });
         }
         else
@@ -98,7 +74,6 @@ StaySchema.post("save", function(stay, next)
     });
 });
 
-// If a stay is going to be deleted, we need to update the sitter that's referencing it.
 StaySchema.pre("remove", function(next)
 {
     var stayId = this.id;
@@ -106,10 +81,8 @@ StaySchema.pre("remove", function(next)
     var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(this.id)});
     sitterQuery.populate("Stays").exec(function(error, sitter)
     {
-        // If an error occurred, return a 400 response with the error message.
         if(error) next(response.status(400).send({message: error}));
         
-        // We should always find a sitter, but just in case, we should check.
         if(sitter)
         {
             // In Javascript, there's no effective .pop() method, so we have to get an index to .splice() the element out.
@@ -118,16 +91,11 @@ StaySchema.pre("remove", function(next)
             {
                 if(sitter.Stays[i].id == stayId) sitterSpliceIndex = i;
             }
-
-            // If we've found a reference to the Stay, splice it out of the list.
             if(sitterSpliceIndex !== null && sitterSpliceIndex > -1) sitter.Stays.splice(sitterSpliceIndex, 1);
 
             sitter.save(function(error)
             {
-                // If an error occurred, return a 400 response with the error message.
                 if(error) next(response.status(400).send({message: error}));
-
-                next();
             });
         }
         else

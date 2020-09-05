@@ -1,8 +1,6 @@
-require("../models/Sitter");
-require("../models/Stay");
-var mongoose = require("mongoose");
-var Sitter = mongoose.model("Sitter");
-var Stay = mongoose.model("Stay");
+const mongoose = require("mongoose");
+const Sitter = require("../models/Sitter");
+const Stay = require("../models/Stay");
 
 exports.Add = function(request, response)
 {
@@ -93,7 +91,7 @@ exports.GetById = function(request, response, next, id)
 
 exports.Update = function(request, response)
 {
-    // We've already retreived the document via the route parameter, so we can update it's values and save to the database.
+    // We've already retrieved the document via the route parameter, so we can update it's values and save to the database.
     var sitter = request.sitter;
     
     // TODO: check out Object.assign(), which might be able to do this a little more cleanly.
