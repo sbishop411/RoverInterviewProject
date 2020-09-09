@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Stay = require("./Stay");
 
+// TODO: Look into refactoring these schemas to be based on ES6 classes, possibly with the help of typegoose once we've implemented TypeScript.
 var OwnerSchema = new Schema(
 {
     Name:
@@ -40,7 +41,8 @@ var OwnerSchema = new Schema(
 
 OwnerSchema.pre("remove", function(next)
 {
-    var stayQuery = Stay.find({Owner: mongoose.Types.ObjectId(this.id)});
+    // TODO: Re-write this using try/catch and async/await.
+    var stayQuery = Stay.find({ Owner: mongoose.Types.ObjectId(this.id) });
     stayQuery.populate("Owner").exec(function(error, stays)
     {
         if(error) next(response.status(400).send({message: error}));
@@ -67,19 +69,19 @@ OwnerSchema.methods.equals = function (other)
         && this.EmailAddress == other.EmailAddress;
 };
 
-OwnerSchema.methods.getIdentityQuery = function ()
-{
-    return {
-        Name: this.Name,
-        Image: this.Image,
-        PhoneNumber: this.PhoneNumber,
-        EmailAddress: this.EmailAddress
-    };
-};
-
 OwnerSchema.methods.toString = function ()
 {
     return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;    
+}
+
+OwnerSchema.query.findMatching = function (other)
+{
+    return this.where({
+        Name: other.Name,
+        PhoneNumber: other.PhoneNumber,
+        EmailAddress: other.EmailAddress,
+        Image: other.Image
+    }).populate("Stays");
 }
 
 module.exports = mongoose.model("Owner", OwnerSchema);

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Stay = require("./Stay");
 const Schema = mongoose.Schema;
 
 var SitterSchema = new Schema(
@@ -77,25 +78,55 @@ SitterSchema.virtual("NumberOfStays").get(function()
     return (this.Stays ? this.Stays.length : 0);
 });
 
-SitterSchema.pre("save", function(next, done)
+var calculateRatingsScoreForSitter = function (sitter)
 {
-    this.RecalculateRanks();
+    if (sitter.NumberOfStays == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        var ratingsSum = sitter.Stays
+            .map(stay => stay.Rating)
+            .reduce((runningTotal, rating) => (runningTotal + rating));
+        
+        return (ratingsSum / sitter.NumberOfStays);
+    }
+}
+
+var calculateOverallRankForSitter = function (sitter)
+{
+    // If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
+    if (sitter.NumberOfStays == 0)
+    {
+        return sitter.SitterScore;
+    }
+    else
+    {
+        var sitterScoreWeight = (sitter.NumberOfStays < 10 ? 1 - (sitter.NumberOfStays / 10) : 0);
+        var ratingsScoreWeight = (sitter.NumberOfStays < 10 ? sitter.NumberOfStays / 10 : 1);
+
+        return (sitter.SitterScore * sitterScoreWeight) + (sitter.RatingsScore * ratingsScoreWeight);
+    }
+}
+
+SitterSchema.pre("save", function (next)
+{
+    this.RatingsScore = calculateRatingsScoreForSitter(this);
+    this.OverallSitterRank = calculateOverallRankForSitter(this);
+
     next();
 });
 
-SitterSchema.pre("update", function(next, done)
-{
-    this.RecalculateRanks();
-    next();
-});
-
-// TODO: Due to circular dependencies, I don't know of a good way to ensure that all associated stays are removed when the sitter is.
+// TODO: Should we be doing this kind of processing at all? Should stays persist if the Sitter is deleted? Should they persist if an Owner is deleted? It would
+// make sense that we still want to retain information that that stay happened.
 SitterSchema.pre("remove", function(next, done)
 {
-    for(var i = 0; i < this.Stays.length; i++)
+    for (var i = 0; i < this.Stays.length; i++)
     {
+        // TODO: Re-write this using try/catch and async/await.
         // TODO: There's a bug in this functionality. Dependent Stays are not currently being removed when the sitter they're associated with is deleted.
-        // This odd way of referencing the Stay model is sso we can avoid a circular definition dependency. 
+        // This odd way of referencing the Stay model is so we can avoid a circular definition dependency.
         mongoose.model("Stay").remove({id: mongoose.Types.ObjectId(this.Stays[i].id)}, function(error)
         {
             if(error) next(response.status(500).send({message: error}));
@@ -105,61 +136,28 @@ SitterSchema.pre("remove", function(next, done)
     next();
 });
 
-SitterSchema.methods.RecalculateRanks = function()
-{
-    if(this.NumberOfStays == 0)
-    {
-        this.RatingsScore = 0;
-    }
-    else
-    {
-        var totalRatings = 0;
-
-        for(var i=0; i< this.Stays.length; i++)
-        {        
-            totalRatings += this.Stays[i].Rating;
-        }
-    
-        this.RatingsScore = (totalRatings / this.NumberOfStays);
-    }
-    
-    // If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
-    if(this.NumberOfStays < 1)
-    {
-        this.OverallSitterRank = this.SitterScore;
-    }
-    else
-    {
-        var sitterScoreWeight = (this.NumberOfStays < 10 ? 1-(this.NumberOfStays/10) : 0);
-        var ratingsScoreWeight = (this.NumberOfStays < 10 ? this.NumberOfStays/10: 1);
-        
-        this.OverallSitterRank = (this.SitterScore * sitterScoreWeight) + (this.RatingsScore * ratingsScoreWeight);
-    }
-};
-
 SitterSchema.methods.equals = function (other)
 {
     return this.Name == other.Name
         && this.Image == other.Image
         && this.PhoneNumber == other.PhoneNumber
-        && this.EmailAddress == other.EmailAddress
-        && this.OverallSitterRank == other.OverallSitterRank
-        && this.RatingsScore == other.RatingsScore;
-};
-
-SitterSchema.methods.getIdentityQuery = function ()
-{
-    return {
-        Name: this.Name,
-        Image: this.Image,
-        PhoneNumber: this.PhoneNumber,
-        EmailAddress: this.EmailAddress
-    };
+        && this.EmailAddress == other.EmailAddress;
 };
 
 SitterSchema.methods.toString = function ()
 {
     return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;
 }
+
+SitterSchema.query.findMatching = function (other)
+{
+    return this.where({
+        Name: other.Name,
+        PhoneNumber: other.PhoneNumber,
+        EmailAddress: other.EmailAddress,
+        Image: other.Image
+    }).populate("Stays");
+}
+
 
 module.exports = mongoose.model("Sitter", SitterSchema);

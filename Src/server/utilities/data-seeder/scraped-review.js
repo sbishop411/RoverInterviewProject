@@ -2,18 +2,29 @@ module.exports = class ScrapedReview
 {
 	constructor(csvLine)
 	{
-		this.StayRating = csvLine[0].trim();
-		this.SitterImage = csvLine[1].trim();
-		this.StayEndDate = csvLine[2].trim();
-		this.StayText = csvLine[3].trim();
-		this.OwnerImage = csvLine[4].trim();
-		this.StayDogs = csvLine[5].trim();
-		this.SitterName = csvLine[6].trim();
-		this.OwnerName = csvLine[7].trim();
-		this.StayStartDate = csvLine[8].trim();
-		this.SitterPhoneNumber = csvLine[9].trim();
-		this.SitterEmailAddress = csvLine[10].trim();
-		this.OwnerPhoneNumber = csvLine[11].trim();
-		this.OwnerEmailAddress = csvLine[12].trim();
+		this.Owner = {
+			Name: csvLine[7].trim(),
+			PhoneNumber: csvLine[11].trim(),
+			EmailAddress: csvLine[12].trim(),
+			Image: csvLine[4].trim()
+		};
+
+		this.Sitter = {
+			Name: csvLine[6].trim(),
+			PhoneNumber: csvLine[9].trim(),
+			EmailAddress: csvLine[10].trim(),
+			Image: csvLine[1].trim()
+		};
+
+		this.Stay = {
+			// OwnerId and SitterId will be set after the corresponding Owner/Sitter has been found/created.
+			OwnerId: null,
+			SitterId: null,
+			Dogs: csvLine[5].trim(),
+			StartDate: csvLine[8].trim(),
+			EndDate: csvLine[2].trim(),
+			Rating: csvLine[0].trim(),
+			Text: csvLine[3].trim()
+		};
 	}
 }

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const Owner = require("./Owner");
 const Sitter = require("./Sitter");
 
 var StaySchema = new Schema(
@@ -52,30 +53,44 @@ var StaySchema = new Schema(
     collection: "Stays"
 });
 
-StaySchema.post("save", function(stay, next)
+StaySchema.post("save", async function (stay, next)
 {
-    var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(stay.id)});
-    sitterQuery.populate("Stays").exec(function(error, sitter)
+    // Update the Owner that this Stay is related to.
+    try
     {
-        if(error) next(response.status(400).send({message: error}));
+        let owner = await Owner.findById(stay.Owner).exec();
+        if (owner === null) throw new Error("The supplied Owner does not have an ID corresponding to an existing Owner.");
         
-        if(sitter)
-        {
-            // Calling save() here triggers Sitter.RecalculateRanks() and updated the sitter with the new correct value.
-            sitter.save(function(error)
-            {
-                if(error) next(response.status(400).send({message: error}));
-            });
-        }
-        else
-        {
-            next();
-        }
-    });
+        owner.Stays.push(stay);
+        owner.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.red("Critical error while saving Stay: "));
+        console.log(error);
+    }
+
+    // Update the Sitter that this Stay is related to.
+    try
+    {
+        let sitter = await Sitter.findById(stay.Sitter).populate("Stays").exec();
+        if (sitter === null) throw new Error("The supplied Sitter does not have an ID corresponding to an existing Sitter.");
+
+        sitter.Stays.push(stay);
+        sitter.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.red("Critical error while saving Stay: "));
+        console.log(error);
+    }
+
+    next();
 });
 
 StaySchema.pre("remove", function(next)
 {
+    // TODO: Re-write this using try/catch, async/await, and findById().
     var stayId = this.id;
 
     var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(this.id)});
@@ -107,8 +122,9 @@ StaySchema.pre("remove", function(next)
 
 StaySchema.methods.equals = function (other)
 {
-    return this.Owner == other.Owner
-        && this.Sitter == other.Sitter
+    // TODO: Checking equivalence by using the Sitter and Owner name here is pretty weak. Maybe we can implement this better after we're using TypeScript?
+    return this.Owner.Name == other.Owner.Name
+        && this.Sitter.Name == other.Sitter.Name
         && this.Dogs == other.Dogs
         && this.StartDate == other.StartDate
         && this.EndDate == other.EndDate
@@ -116,22 +132,22 @@ StaySchema.methods.equals = function (other)
         && this.Rating == other.Rating;
 };
 
-StaySchema.methods.getIdentityQuery = function ()
-{
-    return {
-        Owner: this.Owner,
-        Sitter: this.Sitter,
-        Dogs: this.Dogs,
-        StartDate: this.StartDate,
-        EndDate: this.EndDate,
-        ReviewText: this.ReviewText,
-        Rating: this.Rating
-    };
-};
-
 StaySchema.methods.toString = function ()
 {
     return `Owner: \"${this.Owner.Name}\", Sitter: \"${this.Sitter.Name}\", Dogs: \"${this.Dogs}\", StartDate: \"${this.StartDate}\", EndDate: \"${this.EndDate}\"`;
+}
+
+StaySchema.query.findMatching = function (other)
+{
+    return this.where({
+        Owner: other.OwnerId,
+        Sitter: other.SitterId,
+        Dogs: other.Dogs,
+        StartDate: other.StartDate,
+        EndDate: other.EndDate,
+        ReviewText: other.ReviewText,
+        Rating: other.Rating
+    }).populate("Sitter").populate("Owner");
 }
 
 module.exports = mongoose.model("Stay", StaySchema);

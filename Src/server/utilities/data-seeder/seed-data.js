@@ -12,35 +12,7 @@ const fileName = "reviews.csv";
 module.exports = async function ()
 {
 	let reviews = await loadData();
-
-	let { owners, sitters, stays } = await normalizeData(reviews);
-
-	await Owner.create({
-		Name: "Missy S.",
-		Image: "http://placekitten.com/g/500/500?user=238",
-		PhoneNumber: "+14341712430",
-		EmailAddress: "user8802@t-mobile.com"
-	});
-
-	await Owner.create({
-		Name: "David R.",
-		Image: "http://placekitten.com/g/500/500?user=255",
-		PhoneNumber: "+18470214729",
-		EmailAddress: "user7116@verizon.net"
-	});
-
-	await Sitter.create({
-		Name: "Jenny S.",
-		Image: "http://placekitten.com/g/500/500?user=340",
-		PhoneNumber: "+15583175693",
-		EmailAddress: "user7736@t-mobile.com"
-	});
-
-	await saveModels(owners, Owner, "owner", "owners");
-	await saveModels(sitters, Sitter, "sitter", "sitters");
-
-	await saveStays(stays);
-	//await saveModels(stays, Stay, "stay", "stays");
+	await saveData(reviews);
 }
 
 var loadData = async function ()
@@ -62,147 +34,93 @@ var loadData = async function ()
 	return loadedReviews;
 }
 
-var normalizeData = async function (reviews)
+var saveData = async function (reviews)
 {
-	process.stdout.write(`Normalizing ${reviews.length} reviews`.padEnd(34, ".") + " ");
+	process.stdout.write("Saving data to MongoDB".padEnd(34, ".") + " ");
+	
+	let ownerAddedCount = 0;
+	let sitterAddedCount = 0;
+	let stayAddedCount = 0;
+	let ownerSkippedCount = 0;
+	let sitterSkippedCount = 0;
+	let staySkippedCount = 0;
 
-	let owners = [];
-	let stays = [];
-	let sitters = [];
-
-	await reviews.forEach((review) => 
+	for (let review of reviews)
 	{
-		let newOwner = new Owner({
-			Name: review.OwnerName,
-			Image: review.OwnerImage,
-			PhoneNumber: review.OwnerPhoneNumber,
-			EmailAddress: review.OwnerEmailAddress
-		});
-
-		let newSitter = new Sitter({
-			Name: review.SitterName,
-			Image: review.SitterImage,
-			PhoneNumber: review.SitterPhoneNumber,
-			EmailAddress: review.SitterEmailAddress
-		});
-
-		let newStay = new Stay({
-			Dogs: review.StayDogs,
-			StartDate: review.StayStartDate,
-			EndDate: review.StayEndDate,
-			ReviewText: review.StayText,
-			Rating: review.StayRating,
-			Owner: newOwner,
-			Sitter: newSitter
-		});
-
-		let existingOwner = owners.find((listOwner) => listOwner.equals(newOwner));
-		if (existingOwner != null)
+		let ownerSearchResult = await Owner.findOne().findMatching(review.Owner).exec();
+		let sitterSearchResult = await Sitter.findOne().findMatching(review.Sitter).exec();
+	
+		if (ownerSearchResult === null)
 		{
-			existingOwner.Stays.push(newStay);
+			let createdOwner = await Owner.create({
+				Name: review.Owner.Name,
+				PhoneNumber: review.Owner.PhoneNumber,
+				EmailAddress: review.Owner.EmailAddress,
+				Image: review.Owner.Image
+			});
+
+			review.Stay.OwnerId = createdOwner._id;
+			ownerAddedCount++;
 		}
 		else
 		{
-			newOwner.Stays.push(newStay);
-			owners.push(newOwner);
+			review.Stay.OwnerId = ownerSearchResult._id;
+			ownerSkippedCount++;
 		}
 
-		let existingSitter = sitters.find((listSitter) => listSitter.equals(newSitter));
-		if (existingSitter != null)
+		if (sitterSearchResult === null)
 		{
-			existingSitter.Stays.push(newStay);
+			let createdSitter = await Sitter.create({
+				Name: review.Sitter.Name,
+				PhoneNumber: review.Sitter.PhoneNumber,
+				EmailAddress: review.Sitter.EmailAddress,
+				Image: review.Sitter.Image
+			});
+
+			review.Stay.SitterId = createdSitter._id;
+			sitterAddedCount++;
 		}
 		else
 		{
-			newSitter.Stays.push(newStay);
-			sitters.push(newSitter);
+			review.Stay.SitterId = sitterSearchResult._id;
+			sitterSkippedCount++;
 		}
 
-		stays.push(newStay);
+		let staySearchResult = await Stay.findOne().findMatching(review.Stay).exec();
+
+		if (staySearchResult === null)
+		{
+			await Stay.create({
+				Owner: review.Stay.OwnerId,
+				Sitter: review.Stay.SitterId,
+				Dogs: review.Stay.Dogs,
+				StartDate: review.Stay.StartDate,
+				EndDate: review.Stay.EndDate,
+				ReviewText: review.Stay.ReviewText,
+				Rating: review.Stay.Rating
+			});
+
+			stayAddedCount++;
+		}
+		else
+		{
+			staySkippedCount++;
+		}
+	}
+	
+	console.log(chalk.green("done.") + " Results:");
+	console.table({
+		Owners: {
+			Added: ownerAddedCount,
+			Skipped: ownerSkippedCount
+		},
+		Sitters: {
+			Added: sitterAddedCount,
+			Skipped: sitterSkippedCount
+		},
+		Stays: {
+			Added: stayAddedCount,
+			Skipped: staySkippedCount
+		}
 	});
-
-	// The RatingsScore and OverallSitterRank need to be recalculated here 
-	sitters.forEach((sitter) => sitter.RecalculateRanks());
-
-	console.log(chalk.green(" done.") + ` Found ${owners.length} Owners, ${sitters.length} Sitters, and ${stays.length} Stays.`);
-
-	return {
-		owners: owners,
-		sitters: sitters,
-		stays: stays
-	}
-}
-
-var saveModels = async function (modelsToSave, mongooseModel, singularName, pluralName)
-{
-	process.stdout.write(`Saving ${singularName} data`.padEnd(34, ".") + " ");
-
-	let skippedCount = 0;
-	let skippedModels = [];
-	let addedCount = 0;
-
-	for (const model of modelsToSave)
-	{
-		let searchResult;
-
-		try
-		{
-			searchResult = await mongooseModel.find(model.getIdentityQuery()).limit(1).exec();
-		}
-		catch (error)
-		{
-			console.log(`An error occurred while searching for a ${singularName}:`);
-			console.log(model.toString());
-			console.log(`addedCount: ${addedCount}`);
-			console.log(`skippedCount: ${skippedCount}`);
-			console.log(error);
-			process.exit(1);
-		}
-
-		if (searchResult.length === 0)
-		{
-			try
-			{
-				await mongooseModel.create(model);
-				addedCount++;
-			}
-			catch (error)
-			{
-				console.log(`An error occurred while attempting to add the following ${singularName}:`);
-				console.log(model.toString());
-				console.log(`addedCount: ${addedCount}`);
-				console.log(`skippedCount: ${skippedCount}`);
-				console.log(error);
-				process.exit(1);
-			}
-		}
-		else
-		{
-			skippedModels.push(model);
-			skippedCount++;
-		}
-	}
-
-	if (skippedCount === 0)
-	{
-		console.log(chalk.green("done.") + ` Added ${addedCount} ${pluralName}.`);
-	}
-	else
-	{
-		console.log(chalk.green("done.") + ` Added ${addedCount} ${pluralName}. Skipped ${skippedCount} existing ${pluralName}:`);
-		if (skippedCount < 10)
-		{
-			for (const skippedModel of skippedModels)
-			{
-				console.log("\t" + chalk.yellow("Skipped: ") + skippedModel.toString());
-			}
-		}
-	}
-}
-
-var saveStays = async function (stays)
-{
-	process.stdout.write("Saving Stay data".padEnd(34, ".") + " ");
-	await Stay.insertMany(stays);
-	console.log(chalk.green("done."));
 }
