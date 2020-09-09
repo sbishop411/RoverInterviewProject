@@ -1,6 +1,5 @@
-require("../models/Owner");
-var mongoose = require("mongoose");
-var Owner = mongoose.model("Owner");
+const mongoose = require("mongoose");
+const Owner = require("../models/Owner");
 
 exports.Add = function(request, response)
 {
@@ -76,7 +75,7 @@ exports.GetById = function(request, response, next, id)
 
 exports.Update = function(request, response)
 {
-    // We've already retreived the document via the route parameter, so we can update it's values and save to the database.
+    // We've already retrieved the document via the route parameter, so we can update it's values and save to the database.
     var owner = request.owner;
     
     // TODO: check out Object.assign(), which might be able to do this a little more cleanly.

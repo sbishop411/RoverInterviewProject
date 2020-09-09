@@ -1,5 +1,6 @@
-var mongoose = require("mongoose");
-var Schema = mongoose.Schema;
+const mongoose = require("mongoose");
+const Stay = require("./Stay");
+const Schema = mongoose.Schema;
 
 var SitterSchema = new Schema(
 {
@@ -32,7 +33,7 @@ var SitterSchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "Stay"
     }],
-    // We're forced to store both of these denormalized values because we need to index them. This really, really sucks.
+    // We're forced to store both of these denormalized values because we need to index them.
     OverallSitterRank:
     {
         type: Number,
@@ -47,7 +48,6 @@ var SitterSchema = new Schema(
     }
 },
 {
-    // This is the name of the corresponding MongoDB collection.
     collection: "Sitters",
     toJSON:
     {
@@ -78,30 +78,57 @@ SitterSchema.virtual("NumberOfStays").get(function()
     return (this.Stays ? this.Stays.length : 0);
 });
 
-// If we save any changes to the sitter, we should recalculate the RatingsScore and OverallSitterRank.
-SitterSchema.pre("save", function(next, done)
+var calculateRatingsScoreForSitter = function (sitter)
 {
-    this.RecalculateRanks();
+    if (sitter.NumberOfStays == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        var ratingsSum = sitter.Stays
+            .map(stay => stay.Rating)
+            .reduce((runningTotal, rating) => (runningTotal + rating));
+        
+        return (ratingsSum / sitter.NumberOfStays);
+    }
+}
+
+var calculateOverallRankForSitter = function (sitter)
+{
+    // If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
+    if (sitter.NumberOfStays == 0)
+    {
+        return sitter.SitterScore;
+    }
+    else
+    {
+        var sitterScoreWeight = (sitter.NumberOfStays < 10 ? 1 - (sitter.NumberOfStays / 10) : 0);
+        var ratingsScoreWeight = (sitter.NumberOfStays < 10 ? sitter.NumberOfStays / 10 : 1);
+
+        return (sitter.SitterScore * sitterScoreWeight) + (sitter.RatingsScore * ratingsScoreWeight);
+    }
+}
+
+SitterSchema.pre("save", function (next)
+{
+    this.RatingsScore = calculateRatingsScoreForSitter(this);
+    this.OverallSitterRank = calculateOverallRankForSitter(this);
+
     next();
 });
 
-// If we update the sitter, we should recalculate the RatingsScore and OverallSitterRank.
-SitterSchema.pre("update", function(next, done)
-{
-    this.RecalculateRanks();
-    next();
-});
-
-// TODO: Due to circular dependencies, I don't know of a good way to ensure that all associated stays are removed when the sitter is.
+// TODO: Should we be doing this kind of processing at all? Should stays persist if the Sitter is deleted? Should they persist if an Owner is deleted? It would
+// make sense that we still want to retain information that that stay happened.
 SitterSchema.pre("remove", function(next, done)
 {
-    for(var i = 0; i < this.Stays.length; i++)
+    for (var i = 0; i < this.Stays.length; i++)
     {
-        // TODO: There's a bug in this functionality. Dependent Syaus are not currently being removed when the sitter they're associated with is deleted.
-        // This odd way of referencing the Stay model is sso we can avoid a circular definition dependency. 
+        // TODO: Re-write this using try/catch and async/await.
+        // TODO: There's a bug in this functionality. Dependent Stays are not currently being removed when the sitter they're associated with is deleted.
+        // This odd way of referencing the Stay model is so we can avoid a circular definition dependency.
         mongoose.model("Stay").remove({id: mongoose.Types.ObjectId(this.Stays[i].id)}, function(error)
         {
-            // If an error occurred, return a 400 response with the error message.
             if(error) next(response.status(500).send({message: error}));
         });
     }
@@ -109,39 +136,28 @@ SitterSchema.pre("remove", function(next, done)
     next();
 });
 
-// Helper method to recalculate the RatingsScore and OverallSitterRank. NOTE: The Stays array MUST be populated with actual stays before running this.
-SitterSchema.methods.RecalculateRanks = function()
+SitterSchema.methods.equals = function (other)
 {
-    if(this.NumberOfStays == 0)
-    {
-        this.RatingsScore = 0;
-    }
-    else
-    {
-        var totalRatings = 0;
-
-        for(var i=0; i< this.Stays.length; i++)
-        {        
-            totalRatings += this.Stays[i].Rating;
-        }
-    
-        this.RatingsScore = (totalRatings / this.NumberOfStays);
-    }
-    
-    // If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
-    if(this.NumberOfStays < 1)
-    {
-        this.OverallSitterRank = this.SitterScore;
-    }
-    else
-    {
-        // Determine how much each rating should be weighted into the overall score.
-        var sitterScoreWeight = (this.NumberOfStays < 10 ? 1-(this.NumberOfStays/10) : 0);
-        var ratingsScoreWeight = (this.NumberOfStays < 10 ? this.NumberOfStays/10: 1);
-        
-        // Set the OverallSitterRank value.
-        this.OverallSitterRank = (this.SitterScore * sitterScoreWeight) + (this.RatingsScore * ratingsScoreWeight);
-    }
+    return this.Name == other.Name
+        && this.Image == other.Image
+        && this.PhoneNumber == other.PhoneNumber
+        && this.EmailAddress == other.EmailAddress;
 };
 
-mongoose.model("Sitter", SitterSchema);
+SitterSchema.methods.toString = function ()
+{
+    return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;
+}
+
+SitterSchema.query.findMatching = function (other)
+{
+    return this.where({
+        Name: other.Name,
+        PhoneNumber: other.PhoneNumber,
+        EmailAddress: other.EmailAddress,
+        Image: other.Image
+    }).populate("Stays");
+}
+
+
+module.exports = mongoose.model("Sitter", SitterSchema);

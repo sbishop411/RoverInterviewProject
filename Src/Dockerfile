@@ -6,10 +6,13 @@ WORKDIR /user/src/app
 COPY package*.json ./
 RUN npm install
 
-COPY . .
+COPY bower.json ./
+COPY .bowerrc ./
 
 RUN npm install bower -g
 
 RUN bower install --allow-root
+
+COPY . .
 
 ENTRYPOINT ["node", "server.js"]
