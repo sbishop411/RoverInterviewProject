@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
-const Sitter = require("../models/Sitter");
-const Stay = require("../models/Stay");
+const SitterSchema = require("../schemas/sitter-schema");
+const StaySchema = require("../schemas/stay-schema");
 
 exports.Add = function(request, response)
 {
     // Create a Sitter model based on the request that was sent in.
-    var sitter = new Sitter(request.body);
+    var sitter = new SitterSchema(request.body);
 
     if(sitter.Stays.length > 0)
     {
@@ -38,7 +38,7 @@ exports.Add = function(request, response)
 
 exports.GetAll = function(request, response)
 {
-    var searchQuery = Sitter.find();
+    var searchQuery = SitterSchema.find();
 
     // If we were given a RatingsScore on the querystring, only return results that are equal or greater than it.
     if(typeof request.query.RatingsScore !== 'undefined' && request.query.RatingsScore !== null)
@@ -68,7 +68,7 @@ exports.GetById = function(request, response, next, id)
     // Need to check that what we received is a valid identifier
     if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
     
-    Sitter.findById(id)
+    SitterSchema.findById(id)
         .populate("Stays")
         .exec(function(error, sitter)
         {

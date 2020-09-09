@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
-const Owner = require("../models/Owner");
+const OwnerSchema = require("../schemas/owner-schema");
 
 exports.Add = function(request, response)
 {
     // Create an Owner model based on the request that was sent in.
-    var owner = new Owner(request.body);
+    var owner = new OwnerSchema(request.body);
 
     // Attempt to save the new Owner to MongoDB
     owner.save(function(error)
@@ -32,7 +32,7 @@ exports.Add = function(request, response)
 
 exports.GetAll = function(request, response)
 {
-    Owner.find()
+    OwnerSchema.find()
         .exec(function(error, owners)
         {
             // If an error occurred, return a 400 response with the error message.
@@ -52,7 +52,7 @@ exports.GetById = function(request, response, next, id)
     // Need to check that what we received is a valid identifier
     if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
     
-    Owner.findById(id)
+    OwnerSchema.findById(id)
         .populate("Stays")
         .exec(function(error, owner)
         {

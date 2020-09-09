@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
-const Stay = require("../models/Stay");
-const Sitter = require("../models/Sitter");
+const StaySchema = require("../schemas/stay-schema");
+const SitterSchema = require("../schemas/sitter-schema");
 
 // We need to get both a SitterId and a Stay model to make this work. Not sure how to enforce this.
 exports.Add = function(request, response)
 {
     // Create an Stay model based on the request that was sent in.
-    var stay = new Stay(request.body.Stay);
+    var stay = new StaySchema(request.body.Stay);
     var sitterId = request.body.SitterId;
 
     if(!request.body.SitterId) return response.status(400).send({message: "A sitter Id must be provided when adding a stay."});
@@ -29,7 +29,7 @@ exports.Add = function(request, response)
         }
  
         // It's critical that we populate "Stays" before updating the sitter. This ensures that the OverallSitterRank is correctly calculated and saved.
-        var sitterQuery = Sitter.findById(sitterId);
+        var sitterQuery = SitterSchema.findById(sitterId);
         sitterQuery.populate("Stays").exec(function(error, sitter)
         {
             // TODO: Should this really be a code 400? Presumably they sent along the wrong sitterId, but can we be sure of that?
@@ -57,7 +57,7 @@ exports.Add = function(request, response)
 
 exports.GetAll = function(request, response)
 {
-    Stay.find()
+    StaySchema.find()
         .exec(function(error, stays)
         {
             // If an error occurred, return a 400 response with the error message.
@@ -77,7 +77,7 @@ exports.GetById = function(request, response, next, id)
     // Need to check that what we received is a valid identifier
     if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
 
-    Stay.findById(id)
+    StaySchema.findById(id)
         .populate("Sitter")
         .exec(function(error, stay)
         {

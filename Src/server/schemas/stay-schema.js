@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+const chalk = require("chalk");
 const Schema = mongoose.Schema;
-const Owner = require("./Owner");
-const Sitter = require("./Sitter");
+const OwnerSchema = require("./owner-schema");
+const SitterSchema = require("./sitter-schema");
 
 var StaySchema = new Schema(
 {
@@ -58,7 +59,7 @@ StaySchema.post("save", async function (stay, next)
     // Update the Owner that this Stay is related to.
     try
     {
-        let owner = await Owner.findById(stay.Owner).exec();
+        let owner = await OwnerSchema.findById(stay.Owner).exec();
         if (owner === null) throw new Error("The supplied Owner does not have an ID corresponding to an existing Owner.");
         
         owner.Stays.push(stay);
@@ -73,7 +74,7 @@ StaySchema.post("save", async function (stay, next)
     // Update the Sitter that this Stay is related to.
     try
     {
-        let sitter = await Sitter.findById(stay.Sitter).populate("Stays").exec();
+        let sitter = await SitterSchema.findById(stay.Sitter).populate("Stays").exec();
         if (sitter === null) throw new Error("The supplied Sitter does not have an ID corresponding to an existing Sitter.");
 
         sitter.Stays.push(stay);
@@ -93,7 +94,7 @@ StaySchema.pre("remove", function(next)
     // TODO: Re-write this using try/catch, async/await, and findById().
     var stayId = this.id;
 
-    var sitterQuery = Sitter.findOne({Stays: mongoose.Types.ObjectId(this.id)});
+    var sitterQuery = SitterSchema.findOne({Stays: mongoose.Types.ObjectId(this.id)});
     sitterQuery.populate("Stays").exec(function(error, sitter)
     {
         if(error) next(response.status(400).send({message: error}));

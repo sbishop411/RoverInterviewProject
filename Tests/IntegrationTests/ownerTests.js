@@ -6,7 +6,7 @@ console.log("Connection URL: " + config.mongoDbUrl);
 let testMongoose = require("mongoose");
 testMongoose.connect(config.mongoDbUrl);
 
-require(__dirname + "/../../Src/server/models/Owner");
+require(__dirname + "/../../src/server/models/Owner");
 //let Owner = testMongoose.model("Owner");
 
 // Get Chai set up.
@@ -16,7 +16,7 @@ let should = chai.should();
 chai.use(chaiHttp);
 
 // This is the main webserver.
-let server = require(__dirname + "/../../Src/server");
+let server = require(__dirname + "/../../src/server");
 
 // Parent block for Owners
 describe("Owners", function ()

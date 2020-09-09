@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const chalk = require("chalk");
 const Schema = mongoose.Schema;
-const Stay = require("./Stay");
+const StaySchema = require("./stay-schema");
 
 // TODO: Look into refactoring these schemas to be based on ES6 classes, possibly with the help of typegoose once we've implemented TypeScript.
 var OwnerSchema = new Schema(
@@ -39,10 +40,11 @@ var OwnerSchema = new Schema(
     collection: "Owners"
 });
 
-OwnerSchema.pre("remove", function(next)
+OwnerSchema.pre("remove", async function(next)
 {
+    /*
     // TODO: Re-write this using try/catch and async/await.
-    var stayQuery = Stay.find({ Owner: mongoose.Types.ObjectId(this.id) });
+    var stayQuery = StaySchema.find({ Owner: mongoose.Types.ObjectId(this.id) });
     stayQuery.populate("Owner").exec(function(error, stays)
     {
         if(error) next(response.status(400).send({message: error}));
@@ -58,6 +60,28 @@ OwnerSchema.pre("remove", function(next)
         
         next();
     });
+    */
+    
+    // Note: the .deleteMany() method doesn't trigger pre- or post-remove hooks, so we're stuck looping through our Stays.
+    
+    let staysToRemove = await StaySchema.find({ Owner: this }).exec();
+    
+    for (stay of staysToRemove)
+    {
+        try
+        {
+            await StaySchema.findByIdAndDelete(stay).exec();
+        }
+        catch (error)
+        {
+            console.log(chalk.red("Critical error while deleting Stay as a result of deleting an Owner:"));
+            console.log("Owner: " + this.toString());
+            console.log("Stay : " + stay.toString());
+            console.log(error);
+        }
+    }
+
+    next();
 });
 
 OwnerSchema.methods.equals = function (other)

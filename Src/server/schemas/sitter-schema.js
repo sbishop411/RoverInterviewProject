@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const Stay = require("./Stay");
+const chalk = require("chalk");
+const StaySchema = require("./stay-schema");
 const Schema = mongoose.Schema;
 
 var SitterSchema = new Schema(

@@ -4,9 +4,9 @@ var config = require(__dirname + "/../../config/config");
 let testMongoose = require("mongoose");
 testMongoose.connect(config.mongoDbUrl);
 
-require(__dirname + "/../../Src/server/models/Sitter");
-require(__dirname + "/../../Src/server/models/Stay");
-require(__dirname + "/../../Src/server/models/Owner");
+require(__dirname + "/../../src/server/models/Sitter");
+require(__dirname + "/../../src/server/models/Stay");
+require(__dirname + "/../../src/server/models/Owner");
 //let Sitter = testMongoose.model("Sitter");
 //let Stay = testMongoose.model("Stay");
 //let Owner = testMongoose.model("Owner");
@@ -18,7 +18,7 @@ let should = chai.should();
 chai.use(chaiHttp);
 
 // This is the main webserver.
-let server = require(__dirname + "/../../Src/server");
+let server = require(__dirname + "/../../src/server");
 
 // Parent block for Sitters
 describe("Sitters", function()
