@@ -2,9 +2,9 @@ const fs = require("fs");
 const csvParse = require("csv-parse");
 const chalk = require("chalk");
 const ScrapedReview = require("./scraped-review");
-const Sitter = require("../../models/Sitter");
-const Owner = require("../../models/Owner");
-const Stay = require("../../models/Stay");
+const SitterSchema = require("../../schemas/sitter-schema");
+const OwnerSchema = require("../../schemas/owner-schema");
+const StaySchema = require("../../schemas/stay-schema");
 
 const pathToFile = "./data/";
 const fileName = "reviews.csv";
@@ -28,7 +28,7 @@ var loadData = async function ()
 			.on("error", error => reject(error));
 	});
 
-	process.stdout.write(`Loading data from \"${fileName}\"`.padEnd(34, ".") + " ");
+	process.stdout.write(`Loading data from \"${fileName}\"`.padEnd(60, ".") + " ");
 	let loadedReviews = await streamPromise;
 	console.log(chalk.green(" done.") + ` Found and loaded ${loadedReviews.length} reviews.`);
 	return loadedReviews;
@@ -36,7 +36,7 @@ var loadData = async function ()
 
 var saveData = async function (reviews)
 {
-	process.stdout.write("Saving data to MongoDB".padEnd(34, ".") + " ");
+	process.stdout.write("Saving data to MongoDB".padEnd(60, ".") + " ");
 	
 	let ownerAddedCount = 0;
 	let sitterAddedCount = 0;
@@ -47,12 +47,12 @@ var saveData = async function (reviews)
 
 	for (let review of reviews)
 	{
-		let ownerSearchResult = await Owner.findOne().findMatching(review.Owner).exec();
-		let sitterSearchResult = await Sitter.findOne().findMatching(review.Sitter).exec();
+		let ownerSearchResult = await OwnerSchema.findOne().findMatching(review.Owner).exec();
+		let sitterSearchResult = await SitterSchema.findOne().findMatching(review.Sitter).exec();
 	
 		if (ownerSearchResult === null)
 		{
-			let createdOwner = await Owner.create({
+			let createdOwner = await OwnerSchema.create({
 				Name: review.Owner.Name,
 				PhoneNumber: review.Owner.PhoneNumber,
 				EmailAddress: review.Owner.EmailAddress,
@@ -70,7 +70,7 @@ var saveData = async function (reviews)
 
 		if (sitterSearchResult === null)
 		{
-			let createdSitter = await Sitter.create({
+			let createdSitter = await SitterSchema.create({
 				Name: review.Sitter.Name,
 				PhoneNumber: review.Sitter.PhoneNumber,
 				EmailAddress: review.Sitter.EmailAddress,
@@ -86,11 +86,11 @@ var saveData = async function (reviews)
 			sitterSkippedCount++;
 		}
 
-		let staySearchResult = await Stay.findOne().findMatching(review.Stay).exec();
+		let staySearchResult = await StaySchema.findOne().findMatching(review.Stay).exec();
 
 		if (staySearchResult === null)
 		{
-			await Stay.create({
+			await StaySchema.create({
 				Owner: review.Stay.OwnerId,
 				Sitter: review.Stay.SitterId,
 				Dogs: review.Stay.Dogs,

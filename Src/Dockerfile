@@ -1,4 +1,4 @@
-# NOTE: This dockerfile is designed to be run in the context of the Src directory of this application.
+# NOTE: This dockerfile is designed to be run in the context of the src directory of this application.
 
 FROM node:14
 

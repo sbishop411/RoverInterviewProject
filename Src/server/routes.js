@@ -1,27 +1,29 @@
 var path = require("path");
-var stays = require("./controllers/StayController");
-var sitters = require("./controllers/SitterController");
-var owners = require("./controllers/OwnerController");
+var stays = require("./controllers/stay-controller");
+var sitters = require("./controllers/sitter-controller");
+var owners = require("./controllers/owner-controller");
 
 module.exports = function(app)
 {
-    app.route("/api/sitters")
-        .get(sitters.GetAll)
-        .post(sitters.Add);
-    
-    app.route("/api/sitters/:sitterId")
-        .get(sitters.GetSingle)
-        .put(sitters.Update)
-        .delete(sitters.Delete);
-
     app.route("/api/owners")
         .get(owners.GetAll)
         .post(owners.Add);
     
     app.route("/api/owners/:ownerId")
         .get(owners.GetSingle)
-        .put(owners.Update)
+        .put(owners.Replace)
+        .patch(owners.Update)
         .delete(owners.Delete);
+    
+    app.route("/api/sitters")
+        .get(sitters.GetAll)
+        .post(sitters.Add);
+    
+    app.route("/api/sitters/:sitterId")
+        .get(sitters.GetSingle)
+        .put(sitters.Replace)
+        .patch(sitters.Update)
+        .delete(sitters.Delete);
 
     app.route("/api/stays")
         .get(stays.GetAll)
@@ -29,7 +31,8 @@ module.exports = function(app)
     
     app.route("/api/stays/:stayId")
         .get(stays.GetSingle)
-        .put(stays.Update)
+        .put(stays.Replace)
+        .patch(stays.Update)
         .delete(stays.Delete);
 
     app.param("sitterId", sitters.GetById);

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Stay = require("./Stay");
 const Schema = mongoose.Schema;
 
 var SitterSchema = new Schema(
@@ -28,12 +27,13 @@ var SitterSchema = new Schema(
         trim: true,
         required: [true, "The sitter must have an email address."]
     },
+    // TODO: Instead of doing our score processing in middleware, could we do it in setters instead? The middleware is finnicky, and doesn't always get triggered when you think it will.
     Stays:
     [{
         type: Schema.Types.ObjectId,
         ref: "Stay"
     }],
-    // We're forced to store both of these denormalized values because we need to index them.
+    // We're forced to store both of these denormalized values because we want to create an index for searching/sorting on them.
     OverallSitterRank:
     {
         type: Number,
@@ -57,20 +57,10 @@ var SitterSchema = new Schema(
 
 SitterSchema.virtual("SitterScore").get(function()
 {
-    // We're checking to see if Name is populated here so we don't throw a hard error if they forgot to include it.
-    var preparedName = this.Name ? this.Name.toLowerCase().replace(/[^a-z0-9]/gi,'') : "";
-
-    var uniqueChars = "";
-
-    for(var i = 0; i < preparedName.length; i++)
-    {
-        if(uniqueChars.indexOf(preparedName[i]) == -1)
-        {
-            uniqueChars += preparedName[i];
-        }
-    }
+    var preparedName = this.Name ? this.Name.toLowerCase().replace(/[^a-z0-9]/gi, '') : "";
+    let uniqueLetterCount = new Set(preparedName.split('')).size;
     
-    return (uniqueChars.length / 26) * 5;
+    return (uniqueLetterCount / 26) * 5;
 });
 
 SitterSchema.virtual("NumberOfStays").get(function()
@@ -103,10 +93,8 @@ var calculateOverallRankForSitter = function (sitter)
     }
     else
     {
-        var sitterScoreWeight = (sitter.NumberOfStays < 10 ? 1 - (sitter.NumberOfStays / 10) : 0);
-        var ratingsScoreWeight = (sitter.NumberOfStays < 10 ? sitter.NumberOfStays / 10 : 1);
-
-        return (sitter.SitterScore * sitterScoreWeight) + (sitter.RatingsScore * ratingsScoreWeight);
+        var ratingWeight = sitter.NumberOfStays < 10 ? (sitter.NumberOfStays / 10) : 1;
+        return (sitter.SitterScore * (1 - ratingWeight)) + (sitter.RatingsScore * ratingWeight);
     }
 }
 
@@ -115,24 +103,6 @@ SitterSchema.pre("save", function (next)
     this.RatingsScore = calculateRatingsScoreForSitter(this);
     this.OverallSitterRank = calculateOverallRankForSitter(this);
 
-    next();
-});
-
-// TODO: Should we be doing this kind of processing at all? Should stays persist if the Sitter is deleted? Should they persist if an Owner is deleted? It would
-// make sense that we still want to retain information that that stay happened.
-SitterSchema.pre("remove", function(next, done)
-{
-    for (var i = 0; i < this.Stays.length; i++)
-    {
-        // TODO: Re-write this using try/catch and async/await.
-        // TODO: There's a bug in this functionality. Dependent Stays are not currently being removed when the sitter they're associated with is deleted.
-        // This odd way of referencing the Stay model is so we can avoid a circular definition dependency.
-        mongoose.model("Stay").remove({id: mongoose.Types.ObjectId(this.Stays[i].id)}, function(error)
-        {
-            if(error) next(response.status(500).send({message: error}));
-        });
-    }
-    
     next();
 });
 
@@ -158,6 +128,5 @@ SitterSchema.query.findMatching = function (other)
         Image: other.Image
     }).populate("Stays");
 }
-
 
 module.exports = mongoose.model("Sitter", SitterSchema);

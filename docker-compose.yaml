@@ -40,7 +40,7 @@ services:
     rover-interview-project:
         container_name: "RoverInterviewProject"
         build:
-            context: ./Src/
+            context: ./src/
             dockerfile: ./Dockerfile
         depends_on: 
             - "MongoDB"

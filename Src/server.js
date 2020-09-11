@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const chalk = require("chalk");
 const addRoutes = require("./server/routes");
 const seedData = require("./server/utilities/data-seeder/seed-data");
 
@@ -13,10 +14,12 @@ async function main()
     }
 
     // TODO: This is a bad approach. It would be better to define a retry policy.
-    console.log("Pausing for 5 seconds to ensure MongoDB is started...");
+    process.stdout.write("Pausing for 5 seconds to ensure MongoDB is started".padEnd(60, ".") + " ");
     await sleep(5 * 1000);
+    console.log(chalk.green("done."));
 
     // Connect to MongoDB.
+    process.stdout.write(`Connecting to MongoDB database \"${process.env.MONGO_INITDB_DATABASE}\"`.padEnd(60, ".") + " ");
     try
     {
         await mongoose.connect(process.env.MONGODB_CONNECTION_STRING, {
@@ -30,7 +33,7 @@ async function main()
         console.log(error);
         process.exit(1);
     }
-    console.log("Successfully connected to database: " + process.env.MONGO_INITDB_DATABASE);
+    console.log(chalk.green("done."));
 
     // Attempt to seed MongoDB with data.
     await seedData();
@@ -45,8 +48,9 @@ async function main()
     // Get the routes for our APIs that we defined in routes.js
     addRoutes(app);
 
+    process.stdout.write("Starting server".padEnd(60, ".") + " ");
     app.listen(process.env.SERVER_PORT);
-    console.log("RoverInterviewProject now running at http://localhost:" + process.env.SERVER_PORT);
+    console.log(chalk.green("done.") + ` Listening for requests on port ${process.env.SERVER_PORT}.`);
 
     // Export the server so we can use it for testing.
     module.exports = app;
