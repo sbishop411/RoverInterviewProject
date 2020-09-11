@@ -1,133 +1,153 @@
 const mongoose = require("mongoose");
 const StaySchema = require("../schemas/stay-schema");
-const SitterSchema = require("../schemas/sitter-schema");
 
-// We need to get both a SitterId and a Stay model to make this work. Not sure how to enforce this.
-exports.Add = function(request, response)
+exports.GetAll = async function (request, response)
 {
-    // Create an Stay model based on the request that was sent in.
-    var stay = new StaySchema(request.body.Stay);
-    var sitterId = request.body.SitterId;
-
-    if(!request.body.SitterId) return response.status(400).send({message: "A sitter Id must be provided when adding a stay."});
-
-    // Attempt to save the new Stay to MongoDB
-    stay.save(function(error, stay)
+    // TODO: Returning this entire populated data set for 500 records is about 460 MB over the wire. Not great. We should implement pagination or a count limit.
+    try
     {
-        // TODO: flesh our out error reporting. We should be using the correct error codes and messages.
-        // If an error occurred, return a response with the error message and appropriate error code.
-        if(error)
+        var stays = await StaySchema
+            .find()
+            .exec();
+
+        response.status(200).json(stays);
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving all stays." });
+    }
+}
+
+exports.Add = async function (request, response)
+{
+    // TODO: Implement field value validation.
+    try
+    {
+        let stay = await StaySchema.create(request.body);
+
+        response.status(201).json(stay);
+    }
+    catch (error)
+    {
+        // TODO: Figure out if validation will fail if we provide a non-existent ID for an Owner or Sitter.
+        if (error.name === "ValidationError")
         {
-            if(error.name === "ValidationError")
-            {
-                return response.status(400).send({message: error});
-            }
-            else
-            {
-                return response.status(500).send({message: error});
-            }
+            response.status(400).send({ message: "The supplied stay is invalid and cannot be created." });
         }
- 
-        // It's critical that we populate "Stays" before updating the sitter. This ensures that the OverallSitterRank is correctly calculated and saved.
-        var sitterQuery = SitterSchema.findById(sitterId);
-        sitterQuery.populate("Stays").exec(function(error, sitter)
+        else
         {
-            // TODO: Should this really be a code 400? Presumably they sent along the wrong sitterId, but can we be sure of that?
-            // If an error occurred, return a 400 response with the error message.
-            if(error) return response.status(400).send({message: error});
-
-            if(!sitter) return response.status(400).send({message: "The sitter associated with the provided SitterId could not be found."});
-
-            sitter.Stays.push(stay);
-            sitter.save(function(error)
-            {
-               // If an error occurred, return a 400 response with the error message.
-                if(error) return response.status(400).send({message: error}); 
-
-                // There were no errors, respond with code 200, a success message, and the created stay.
-                response.status(200);
-                response.statusMessage = "Stay successfully added.";
-
-                // TODO: For some reason, this is resulting in the entire request being returned to the caller, instead of just the stay we created.
-                response.json(stay);
-            });
-        });
-    });
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while adding the specified stay." });
+        }
+    }
 }
 
-exports.GetAll = function(request, response)
+exports.GetById = async function (request, response, next, id)
 {
-    StaySchema.find()
-        .exec(function(error, stays)
+    // Note: This is what gets run when the router needs to populate a stay from a stay ID before passing it to an endpoint.
+    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
+
+    try
+    {
+        let stay = await StaySchema.findById(id)
+            .populate("Owner")
+            .populate("Sitter")
+            .exec();
+
+        if (!stay)
         {
-            // If an error occurred, return a 400 response with the error message.
-            if(error) return response.status(400).send({message: error});
-
-            response.json(stays);
-        });
-}
-
-exports.GetSingle = function(request, response)
-{
-    response.json(request.stay);
-};
-
-exports.GetById = function(request, response, next, id)
-{
-    // Need to check that what we received is a valid identifier
-    if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
-
-    StaySchema.findById(id)
-        .populate("Sitter")
-        .exec(function(error, stay)
+            response.status(404).send({ message: "The requested stay does not exist." });
+        }
+        else
         {
-            // If an error occurred, return a 400 response with the error message.
-            if(error) next(error);
-
-            // If no matching stay was found, return a message indicating such.
-            if(!stay)
-            {
-                return response.status(400).send({message: "No stay was found for ID \"" + id + "\"."});
-            }
-            
             request.stay = stay;
             next();
-        });
+        }
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving the specified stay." });
+    }
 }
 
-exports.Update = function(request, response)
+exports.GetSingle = function (request, response)
 {
-    // We've already retrieved the document via the route parameter, so we can update it's values and save to the database.
-    var stay = request.stay;
-
-    // TODO: check out Object.assign(), which might be able to do this a little more cleanly.
-    if(typeof request.body.Dogs != 'undefined' && request.body.Dogs !== null) stay.Dogs = request.body.Dogs;
-    if(typeof request.body.StartDate != 'undefined' && request.body.StartDate !== null) stay.StartDate = request.body.StartDate;
-    if(typeof request.body.EndDate != 'undefined' && request.body.EndDate !== null) stay.EndDate = request.body.EndDate;
-    if(typeof request.body.ReviewText != 'undefined' && request.body.ReviewText !== null) stay.ReviewText = request.body.ReviewText;
-    if(typeof request.body.Rating != 'undefined' && request.body.Rating !== null) stay.Rating = request.body.Rating;
-
-    // Save the stay model that we've extracted from the request.
-    stay.save(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
+        response.status(200).json(request.stay);
+    }
+    catch (error)
+    {
+        console.error(error);
+        return response.status(500).send({ message: "An error occurred while retrieving the specified stay." });
+    }
+};
 
-        response.json(stay);
-    });
+exports.Replace = async function (request, response)
+{
+    try
+    {
+        request.stay.Owner = request.body.Owner;
+        request.stay.Sitter = request.body.Sitter;
+        request.stay.Dogs = request.body.Dogs;
+        request.stay.StartDate = request.body.StartDate;
+        request.stay.EndDate = request.body.EndDate;
+        request.stay.ReviewText = request.body.ReviewText;
+        request.stay.Rating = request.body.Rating;
+        let stay = await request.stay.save();
+
+        response.status(200).json(stay);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied stay is invalid, and cannot be used to replace the stay." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to replace the stay." });
+        }
+    }
 }
 
-exports.Delete = function(request, response)
+exports.Update = async function (request, response)
 {
-    // Create an Stay model based on the request that was sent in.
-    var stay = request.stay;
-
-    // Attempt to delete the stay from MongoDB
-    stay.remove(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
+        request.stay = Object.assign(request.stay, request.body);
+        let stay = await request.stay.save();
 
-        response.json(stay);
-    });
+        response.status(200).json(stay);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied stay data is invalid, so the stay cannot be updated." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to update the stay." });
+        }
+    }
+}
+
+exports.Delete = async function (request, response)
+{
+    try
+    {
+        await request.stay.delete();
+
+        response.status(204).send({ message: "Stay successfully deleted." });
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while attempting to delete the stay." });
+    }
 }

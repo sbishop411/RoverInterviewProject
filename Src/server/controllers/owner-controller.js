@@ -1,110 +1,141 @@
 const mongoose = require("mongoose");
 const OwnerSchema = require("../schemas/owner-schema");
 
-exports.Add = function(request, response)
+exports.GetAll = async function (request, response)
 {
-    // Create an Owner model based on the request that was sent in.
-    var owner = new OwnerSchema(request.body);
-
-    // Attempt to save the new Owner to MongoDB
-    owner.save(function(error)
+    try
     {
-        // TODO: Flesh our out error reporting. We should be using the correct error codes and messages.
-        // If an error occurred, return a response with the error message and appropriate error code.
-        if(error)
-        {
-            if(error.name === "ValidationError")
-            {
-                return response.status(400).send({message: error});
-            }
-            else
-            {
-                return response.status(500).send({message: error});
-            }
-        }
-        
-        // There were no errors, respond with code 200, a success message, and the created owner.
-        response.status(200);
-        response.statusMessage = "Owner successfully added.";
-        response.json(owner);
-    });
+        var owners = await OwnerSchema.find().exec();
+
+        response.status(200).json(owners);
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving all owners." });
+    }
 }
 
-exports.GetAll = function(request, response)
+exports.Add = async function(request, response)
 {
-    OwnerSchema.find()
-        .exec(function(error, owners)
-        {
-            // If an error occurred, return a 400 response with the error message.
-            if(error) return response.status(400).send({message: error});
+    // TODO: Implement field value validation.
+    try
+    {
+        let owner = await OwnerSchema.create(request.body);
 
-            response.json(owners);
-        });
+        response.status(201).json(owner);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied owner is invalid and cannot be created." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while adding the specified owner." });
+        }
+    }
+}
+
+exports.GetById = async function (request, response, next, id)
+{
+    // Note: This is what gets run when the router needs to populate an owner from an owner ID before passing it to an endpoint.
+    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
+
+    try
+    {
+        let owner = await OwnerSchema.findById(id)
+            .populate("Stays")
+            .exec();
+
+        if (!owner)
+        {
+            response.status(404).send({ message: "The requested owner does not exist." });
+        }
+        else
+        {
+            request.owner = owner;
+            next();
+        }
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving the specified owner." });
+    }
 }
 
 exports.GetSingle = function(request, response)
 {
-    response.json(request.owner);
+    try
+    {
+        response.status(200).json(request.owner);
+    }
+    catch (error)
+    {
+        console.error(error);
+        return response.status(500).send({ message: "An error occurred while retrieving the specified owner." });
+    }
 };
 
-exports.GetById = function(request, response, next, id)
+exports.Replace = async function(request, response)
 {
-    // Need to check that what we received is a valid identifier
-    if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
-    
-    OwnerSchema.findById(id)
-        .populate("Stays")
-        .exec(function(error, owner)
+    try
+    {
+        let owner = await OwnerSchema.findOneAndReplace({ _id: request.owner._id }, request.body, { "new": true });
+
+        response.status(200).json(owner);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
         {
-            // If an error occurred, return a 400 response with the error message.
-            if(error)
-            {
-                next(error);
-            }
-
-            // If no matching owner was found, return a message indicating such.
-            if(!owner)
-            {
-                return response.status(400).send({message: "No owner was found for ID \"" + id + "\"."});
-            }
-            
-            request.owner = owner;
-            next();
-        });
+            response.status(400).send({ message: "The supplied owner is invalid, and cannot be used to replace the owner." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to replace the owner." });
+        }
+    }
 }
 
-exports.Update = function(request, response)
+exports.Update = async function (request, response)
 {
-    // We've already retrieved the document via the route parameter, so we can update it's values and save to the database.
-    var owner = request.owner;
-    
-    // TODO: check out Object.assign(), which might be able to do this a little more cleanly.
-    if(typeof request.body.Name != 'undefined' && request.body.Name !== null) owner.Name = request.body.Name;
-    if(typeof request.body.Image != 'undefined' && request.body.Image !== null) owner.Image = request.body.Image;
-    if(typeof request.body.PhoneNumber != 'undefined' && request.body.PhoneNumber !== null) owner.PhoneNumber = request.body.PhoneNumber;
-    if(typeof request.body.EmailAddress != 'undefined' && request.body.EmailAddress !== null) owner.EmailAddress = request.body.EmailAddress;
-
-    // Save the sitter model that we've extracted from the request.
-    owner.save(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
-
-        response.json(owner);
-    });
+        request.owner = Object.assign(request.owner, request.body);
+        let owner = await request.owner.save();
+  
+        response.status(200).json(owner);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied owner data is invalid, so the owner cannot be updated." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to update the owner." });
+        }
+    }
 }
 
-exports.Delete = function(request, response)
+exports.Delete = async function(request, response)
 {
-    // Create an Owner model based on the request that was sent in.
-    var owner = request.owner;
-
-    // Attempt to delete the owner from MongoDB
-    owner.remove(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
-        
-        response.json(owner);
-    });
+        await request.owner.delete();
+
+        response.status(204).send({ message: "Owner successfully deleted." });
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while attempting to delete the owner." });
+    }
 }

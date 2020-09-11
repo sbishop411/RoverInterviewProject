@@ -1,127 +1,152 @@
 const mongoose = require("mongoose");
 const SitterSchema = require("../schemas/sitter-schema");
-const StaySchema = require("../schemas/stay-schema");
 
-exports.Add = function(request, response)
+exports.GetAll = async function (request, response)
 {
-    // Create a Sitter model based on the request that was sent in.
-    var sitter = new SitterSchema(request.body);
-
-    if(sitter.Stays.length > 0)
+    try
     {
-        return response.status(501).send({message: "Adding a new sitter with stays is not supported yet."});
+        var sitters = await SitterSchema
+            .find()
+            // TODO: See if this line is necessary.
+            .populate("Stays", "Rating")
+            .sort("-OverallSitterRank")
+            .exec();
+
+        response.status(200).json(sitters);
     }
-
-    // Attempt to save the new sitter to MongoDB
-    sitter.save(function(error)
+    catch (error)
     {
-        // TODO: flesh our out error reporting. We should be using the correct error codes and messages.
-        // If an error occurred, return a response with the error message and appropriate error code.
-        if(error)
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving all sitters." });
+    }
+}
+
+exports.Add = async function (request, response)
+{
+    // TODO: Implement field value validation.
+    try
+    {
+        let sitter = await SitterSchema.create(request.body);
+
+        response.status(201).json(sitter);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
         {
-            if(error.name === "ValidationError")
-            {
-                return response.status(400).send({message: error});
-            }
-            else
-            {
-                return response.status(500).send({message: error});
-            }
+            response.status(400).send({ message: "The supplied sitter is invalid and cannot be created." });
         }
-
-        // There were no errors, respond with code 200, a success message, and the created sitter.
-        response.status(200);
-        response.statusMessage = "Sitter successfully added.";
-        response.json(sitter);
-    });
-}
-
-exports.GetAll = function(request, response)
-{
-    var searchQuery = SitterSchema.find();
-
-    // If we were given a RatingsScore on the querystring, only return results that are equal or greater than it.
-    if(typeof request.query.RatingsScore !== 'undefined' && request.query.RatingsScore !== null)
-    {
-        searchQuery.where("RatingsScore").gte(Number(request.query.RatingsScore));
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while adding the specified sitter." });
+        }
     }
-    
-    searchQuery
-        .populate("Stays", "Rating")
-        .sort("-OverallSitterRank")
-        .exec(function(error, sitters)
-        {
-            // If an error occurred, return a 400 response with the error message.
-            if(error) return response.status(400).send({message: error});
-
-            response.json(sitters);
-        });
 }
 
-exports.GetSingle = function(request, response)
+exports.GetById = async function (request, response, next, id)
 {
-    response.json(request.sitter);
-};
+    // Note: This is what gets run when the router needs to populate a sitter from a sitter ID before passing it to an endpoint.
+    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
 
-exports.GetById = function(request, response, next, id)
-{
-    // Need to check that what we received is a valid identifier
-    if(!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({message: "The supplied id \"" + id + "\" is not a valid mongoose id."});
-    
-    SitterSchema.findById(id)
-        .populate("Stays")
-        .exec(function(error, sitter)
+    try
+    {
+        let sitter = await SitterSchema.findById(id)
+            .populate("Stays")
+            .exec();
+
+        if (!sitter)
         {
-            // If an error occurred, return a 400 response with the error message.
-            if(error)
-            {
-                next(error);
-            }
-
-            // If no matching sitter was found, return a message indicating such.
-            if(!sitter)
-            {
-                return response.status(400).send({message: "No sitter was found for ID \"" + id + "\"."});
-            }
-            
+            response.status(404).send({ message: "The requested sitter does not exist." });
+        }
+        else
+        {
             request.sitter = sitter;
             next();
-        });
+        }
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while retrieving the specified sitter." });
+    }
 }
 
-exports.Update = function(request, response)
+exports.GetSingle = function (request, response)
 {
-    // We've already retrieved the document via the route parameter, so we can update it's values and save to the database.
-    var sitter = request.sitter;
-    
-    // TODO: check out Object.assign(), which might be able to do this a little more cleanly.
-    if(typeof request.body.Name != 'undefined' && request.body.Name !== null) sitter.Name = request.body.Name;
-    if(typeof request.body.Image != 'undefined' && request.body.Image !== null) sitter.Image = request.body.Image;
-    if(typeof request.body.PhoneNumber != 'undefined' && request.body.PhoneNumber !== null) sitter.PhoneNumber = request.body.PhoneNumber;
-    if(typeof request.body.EmailAddress != 'undefined' && request.body.EmailAddress !== null) sitter.EmailAddress = request.body.EmailAddress;
-    if(typeof request.body.Stays != 'undefined' && request.body.Stays !== null) sitter.Stays = request.body.Stays;
-
-    // Save the sitter model that we've extracted from the request.
-    sitter.save(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
+        response.status(200).json(request.sitter);
+    }
+    catch (error)
+    {
+        console.error(error);
+        return response.status(500).send({ message: "An error occurred while retrieving the specified sitter." });
+    }
+};
 
-        response.json(sitter);
-    });
+exports.Replace = async function (request, response)
+{
+    try
+    {
+        // Note: findOneAndReplace() would be the most accurate method to use here, but it triggers a query middleware instead of a document middleware, which means 
+        // that it would be a lot harder implement the auto-update logic for the calculated Sitter fields. That said, there's gotta be a better way to do a replace.
+        request.sitter.Name = request.body.Name;
+        request.sitter.PhoneNumber = request.body.PhoneNumber;
+        request.sitter.EmailAddress = request.body.EmailAddress;
+        request.sitter.Image = request.body.Image;
+        let sitter = await request.sitter.save();
+        
+        response.status(200).json(sitter);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied sitter is invalid, and cannot be used to replace the sitter." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to replace the sitter." });
+        }
+    }
 }
 
-exports.Delete = function(request, response)
+exports.Update = async function (request, response)
 {
-    // Create a Sitter model based on the request that was sent in.
-    var sitter = request.sitter;
-
-    // Attempt to delete the sitter from MongoDB
-    sitter.remove(function(error)
+    try
     {
-        // If an error occurred, return a 400 response with the error message.
-        if(error) return response.status(400).send({message: error});
+        request.sitter = Object.assign(request.sitter, request.body);
+        let sitter = await request.sitter.save();
 
-        response.json(sitter);
-    });
+        response.status(200).json(sitter);
+    }
+    catch (error)
+    {
+        if (error.name === "ValidationError")
+        {
+            response.status(400).send({ message: "The supplied sitter data is invalid, so the sitter cannot be updated." });
+        }
+        else
+        {
+            console.error(error);
+            response.status(500).send({ message: "An error occurred while attempting to update the sitter." });
+        }
+    }
+}
+
+exports.Delete = async function (request, response)
+{
+    try
+    {
+        await request.sitter.delete();
+
+        response.status(204).send({ message: "Sitter successfully deleted." });
+    }
+    catch (error)
+    {
+        console.error(error);
+        response.status(500).send({ message: "An error occurred while attempting to delete the sitter." });
+    }
 }

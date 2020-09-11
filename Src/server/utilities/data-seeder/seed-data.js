@@ -28,7 +28,7 @@ var loadData = async function ()
 			.on("error", error => reject(error));
 	});
 
-	process.stdout.write(`Loading data from \"${fileName}\"`.padEnd(34, ".") + " ");
+	process.stdout.write(`Loading data from \"${fileName}\"`.padEnd(60, ".") + " ");
 	let loadedReviews = await streamPromise;
 	console.log(chalk.green(" done.") + ` Found and loaded ${loadedReviews.length} reviews.`);
 	return loadedReviews;
@@ -36,7 +36,7 @@ var loadData = async function ()
 
 var saveData = async function (reviews)
 {
-	process.stdout.write("Saving data to MongoDB".padEnd(34, ".") + " ");
+	process.stdout.write("Saving data to MongoDB".padEnd(60, ".") + " ");
 	
 	let ownerAddedCount = 0;
 	let sitterAddedCount = 0;

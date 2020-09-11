@@ -11,7 +11,8 @@ module.exports = function(app)
     
     app.route("/api/owners/:ownerId")
         .get(owners.GetSingle)
-        .put(owners.Update)
+        .put(owners.Replace)
+        .patch(owners.Update)
         .delete(owners.Delete);
     
     app.route("/api/sitters")
@@ -20,7 +21,8 @@ module.exports = function(app)
     
     app.route("/api/sitters/:sitterId")
         .get(sitters.GetSingle)
-        .put(sitters.Update)
+        .put(sitters.Replace)
+        .patch(sitters.Update)
         .delete(sitters.Delete);
 
     app.route("/api/stays")
@@ -29,7 +31,8 @@ module.exports = function(app)
     
     app.route("/api/stays/:stayId")
         .get(stays.GetSingle)
-        .put(stays.Update)
+        .put(stays.Replace)
+        .patch(stays.Update)
         .delete(stays.Delete);
 
     app.param("sitterId", sitters.GetById);

@@ -10,13 +10,23 @@ var StaySchema = new Schema(
     {
         type: Schema.Types.ObjectId,
         ref: "Owner",
-        required: [true, "The stay must be associated with an owner."]
+        required: [true, "The stay must be associated with an owner."],
+        set: function (newOwner)
+        {
+            if (this.Owner && this.Owner._id != newOwner) this._previousOwner = this.Owner._id;
+            return newOwner;
+        }
     },
     Sitter:
     {
         type: Schema.Types.ObjectId,
         ref: "Sitter",
-        required: [true, "The stay must be associated with a sitter."]
+        required: [true, "The stay must be associated with a sitter."],
+        set: function (newSitter)
+        {
+            if (this.Sitter && this.Sitter._id != newSitter) this._previousSitter = this.Sitter._id;
+            return newSitter;
+        }
     },
     Dogs:
     {
@@ -54,71 +64,140 @@ var StaySchema = new Schema(
     collection: "Stays"
 });
 
+var removeStayFromOwner = async function (owner, stay)
+{
+    try
+    {
+        let ownerModel = await OwnerSchema.findById(owner)
+            .populate("Stays")
+            .exec();
+
+        let stayIndex = ownerModel.Stays.indexOf(stay);
+        ownerModel.Stays.splice(stayIndex, 1);
+        ownerModel.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.redBright("Critical error while removing stay from owner:"));
+        console.error(error);
+    }
+}
+
+var addStayToOwner = async function (owner, stay)
+{
+    try
+    {
+        let ownerModel = await OwnerSchema.findById(owner)
+            .populate("Stays")
+            .exec();
+
+        ownerModel.Stays.push(stay);
+        ownerModel.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.redBright("Critical error while adding stay to owner:"));
+        console.error(error);
+    }
+}
+
+var removeStayFromSitter = async function (sitter, stay)
+{
+    try
+    {
+        let sitterModel = await SitterSchema.findById(sitter)
+            .populate("Stays")
+            .exec();
+    
+        let stayIndex = sitterModel.Stays.indexOf(stay);
+        sitterModel.Stays.splice(stayIndex, 1);
+        sitterModel.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.redBright("Critical error while removing stay from sitter:"));
+        console.error(error);
+    }
+}
+
+var addStayToSitter = async function (sitter, stay)
+{
+    try
+    {
+        let sitterModel = await SitterSchema.findById(sitter)
+            .populate("Stays")
+            .exec();
+
+        sitterModel.Stays.push(stay);
+        sitterModel.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.redBright("Critical error while adding stay to sitter:"));
+        console.error(error);
+    }
+}
+
+// Mongoose sucks, and we don't have access to this.isNew or this.modifiedPaths() in the post hook, so we need to set them on the document here.
+StaySchema.pre("save", function (next)
+{
+    this.isNewStay = this.isNew;
+    this.alteredProperties = this.modifiedPaths();
+
+    next();
+});
+
 StaySchema.post("save", async function (stay, next)
 {
-    // Update the Owner that this Stay is related to.
-    try
+    if (this.isNewStay)
     {
-        let owner = await OwnerSchema.findById(stay.Owner).exec();
-        if (owner === null) throw new Error("The supplied Owner does not have an ID corresponding to an existing Owner.");
-        
-        owner.Stays.push(stay);
-        owner.save();
+        await addStayToOwner(this.Owner, this);
+        await addStayToSitter(this.Sitter, this);
     }
-    catch (error)
+    else
     {
-        console.log(chalk.red("Critical error while saving Stay: "));
-        console.log(error);
-    }
+        if (this.alteredProperties.includes("Rating"))
+        {
+            let sitterModel = await SitterSchema.findById(stay.Sitter)
+                .populate("Stays")
+                .exec();
 
-    // Update the Sitter that this Stay is related to.
-    try
-    {
-        let sitter = await SitterSchema.findById(stay.Sitter).populate("Stays").exec();
-        if (sitter === null) throw new Error("The supplied Sitter does not have an ID corresponding to an existing Sitter.");
+            sitterModel.save();
+        }
 
-        sitter.Stays.push(stay);
-        sitter.save();
-    }
-    catch (error)
-    {
-        console.log(chalk.red("Critical error while saving Stay: "));
-        console.log(error);
+        if (this._previousOwner)
+        {
+            await addStayToOwner(this.Owner, this);
+            await removeStayFromOwner(this._previousOwner, this);
+        }
+
+        if (this._previousSitter)
+        {
+            await addStayToSitter(this.Sitter, this);
+            await removeStayFromSitter(this._previousSitter, this);
+        }
     }
 
     next();
 });
 
-StaySchema.pre("remove", function(next)
+StaySchema.post("remove", async function (stay, next)
 {
-    // TODO: Re-write this using try/catch, async/await, and findById().
-    var stayId = this.id;
-
-    var sitterQuery = SitterSchema.findOne({Stays: mongoose.Types.ObjectId(this.id)});
-    sitterQuery.populate("Stays").exec(function(error, sitter)
+    try
     {
-        if(error) next(response.status(400).send({message: error}));
-        
-        if(sitter)
-        {
-            // In Javascript, there's no effective .pop() method, so we have to get an index to .splice() the element out.
-            var sitterSpliceIndex;
-            for(var i = 0; i < sitter.Stays.length; i++)
-            {
-                if(sitter.Stays[i].id == stayId) sitterSpliceIndex = i;
-            }
-            if(sitterSpliceIndex !== null && sitterSpliceIndex > -1) sitter.Stays.splice(sitterSpliceIndex, 1);
+        let sitterModel = await SitterSchema.findById(stay.Sitter)
+            .populate("Stays")
+            .exec();
 
-            sitter.save(function(error)
-            {
-                if(error) next(response.status(400).send({message: error}));
-            });
-        }
-        else
-        {
-            next();
-        }
-    });
+        sitterModel.save();
+    }
+    catch (error)
+    {
+        console.log(chalk.redBright("Critical error while updating sitter after deleting stay:"));
+        console.error(error);
+    }
+
+    next();
 });
 
 StaySchema.methods.equals = function (other)
