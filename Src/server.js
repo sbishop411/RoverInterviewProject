@@ -7,6 +7,8 @@ const seedData = require("./server/utilities/data-seeder/seed-data");
 
 async function main()
 {
+    console.log(chalk.black("Hello, friend."));
+    
     // If a NODE_ENV wasn't defined, assume that we're running in a development environment.
     if (typeof process.env.NODE_ENV === 'undefined' || process.env.NODE_ENV === null)
     {
@@ -49,11 +51,28 @@ async function main()
     addRoutes(app);
 
     process.stdout.write("Starting server".padEnd(60, ".") + " ");
-    app.listen(process.env.SERVER_PORT);
+    let server = app.listen(process.env.SERVER_PORT);
     console.log(chalk.green("done.") + ` Listening for requests on port ${process.env.SERVER_PORT}.`);
 
     // Export the server so we can use it for testing.
     module.exports = app;
+
+    // Note: In the future, we could look into implementing something like godaddy/terminus for this.
+    process.on("SIGTERM", async () =>
+    {
+        console.log(chalk.yellow("Signal to terminate process received."));
+
+        process.stdout.write("Shutting down the HTTP server".padEnd(60, ".") + " ");
+        await server.close();
+        console.log(chalk.green("done."));
+
+        process.stdout.write("Closing connection to MongoDB".padEnd(60, ".") + " ");
+        await mongoose.connection.close(false);
+        console.log(chalk.green("done."));
+
+        console.log(chalk.black("Goodbye, friend."));
+        process.exit(0);
+    });
 }
 
 function sleep(ms)
