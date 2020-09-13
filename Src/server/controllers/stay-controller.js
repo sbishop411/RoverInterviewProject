@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const StaySchema = require("../schemas/stay-schema");
 
-exports.GetAll = async function (request, response)
+exports.getAllStays = async function (request, response)
 {
     // TODO: Returning this entire populated data set for 500 records is about 460 MB over the wire. Not great. We should implement pagination or a count limit.
     try
@@ -19,7 +19,7 @@ exports.GetAll = async function (request, response)
     }
 }
 
-exports.Add = async function (request, response)
+exports.addStay = async function (request, response)
 {
     // TODO: Implement field value validation.
     try
@@ -43,7 +43,7 @@ exports.Add = async function (request, response)
     }
 }
 
-exports.GetById = async function (request, response, next, id)
+exports.getStayById = async function (request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate a stay from a stay ID before passing it to an endpoint.
     if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
@@ -57,7 +57,7 @@ exports.GetById = async function (request, response, next, id)
 
         if (!stay)
         {
-            response.status(404).send({ message: "The requested stay does not exist." });
+            response.status(404).send({ message: "A stay with the specified ID was not found." });
         }
         else
         {
@@ -72,7 +72,7 @@ exports.GetById = async function (request, response, next, id)
     }
 }
 
-exports.GetSingle = function (request, response)
+exports.getSingleStay = function (request, response)
 {
     try
     {
@@ -85,7 +85,7 @@ exports.GetSingle = function (request, response)
     }
 };
 
-exports.Replace = async function (request, response)
+exports.replaceStay = async function (request, response)
 {
     try
     {
@@ -114,7 +114,7 @@ exports.Replace = async function (request, response)
     }
 }
 
-exports.Update = async function (request, response)
+exports.updateStay = async function (request, response)
 {
     try
     {
@@ -137,7 +137,7 @@ exports.Update = async function (request, response)
     }
 }
 
-exports.Delete = async function (request, response)
+exports.deleteStay = async function (request, response)
 {
     try
     {

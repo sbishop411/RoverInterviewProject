@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const OwnerSchema = require("../schemas/owner-schema");
 
-exports.GetAll = async function (request, response)
+exports.getAllOwners = async function (request, response)
 {
     try
     {
@@ -16,7 +16,7 @@ exports.GetAll = async function (request, response)
     }
 }
 
-exports.Add = async function(request, response)
+exports.addOwner = async function(request, response)
 {
     // TODO: Implement field value validation.
     try
@@ -39,7 +39,7 @@ exports.Add = async function(request, response)
     }
 }
 
-exports.GetById = async function (request, response, next, id)
+exports.getOwnerById = async function (request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate an owner from an owner ID before passing it to an endpoint.
     if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
@@ -52,7 +52,7 @@ exports.GetById = async function (request, response, next, id)
 
         if (!owner)
         {
-            response.status(404).send({ message: "The requested owner does not exist." });
+            response.status(404).send({ message: "An owner with the specified ID was not found." });
         }
         else
         {
@@ -67,7 +67,7 @@ exports.GetById = async function (request, response, next, id)
     }
 }
 
-exports.GetSingle = function(request, response)
+exports.getSingleOwner = function(request, response)
 {
     try
     {
@@ -80,7 +80,7 @@ exports.GetSingle = function(request, response)
     }
 };
 
-exports.Replace = async function(request, response)
+exports.replaceOwner = async function(request, response)
 {
     try
     {
@@ -102,7 +102,7 @@ exports.Replace = async function(request, response)
     }
 }
 
-exports.Update = async function (request, response)
+exports.updateOwner = async function (request, response)
 {
     try
     {
@@ -125,7 +125,7 @@ exports.Update = async function (request, response)
     }
 }
 
-exports.Delete = async function(request, response)
+exports.deleteOwner = async function(request, response)
 {
     try
     {

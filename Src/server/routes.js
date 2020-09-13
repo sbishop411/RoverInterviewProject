@@ -6,38 +6,38 @@ var owners = require("./controllers/owner-controller");
 module.exports = function(app)
 {
     app.route("/api/owners")
-        .get(owners.GetAll)
-        .post(owners.Add);
+        .get(owners.getAllOwners)
+        .post(owners.addOwner);
     
     app.route("/api/owners/:ownerId")
-        .get(owners.GetSingle)
-        .put(owners.Replace)
-        .patch(owners.Update)
-        .delete(owners.Delete);
+        .get(owners.getSingleOwner)
+        .put(owners.replaceOwner)
+        .patch(owners.updateOwner)
+        .delete(owners.deleteOwner);
     
     app.route("/api/sitters")
-        .get(sitters.GetAll)
-        .post(sitters.Add);
+        .get(sitters.getAllSitters)
+        .post(sitters.addSitter);
     
     app.route("/api/sitters/:sitterId")
-        .get(sitters.GetSingle)
-        .put(sitters.Replace)
-        .patch(sitters.Update)
-        .delete(sitters.Delete);
+        .get(sitters.getSingleSitter)
+        .put(sitters.replaceSitter)
+        .patch(sitters.updateSitter)
+        .delete(sitters.deleteSitter);
 
     app.route("/api/stays")
-        .get(stays.GetAll)
-        .post(stays.Add);
+        .get(stays.getAllStays)
+        .post(stays.addStay);
     
     app.route("/api/stays/:stayId")
-        .get(stays.GetSingle)
-        .put(stays.Replace)
-        .patch(stays.Update)
-        .delete(stays.Delete);
+        .get(stays.getSingleStay)
+        .put(stays.replaceStay)
+        .patch(stays.updateStay)
+        .delete(stays.deleteStay);
 
-    app.param("sitterId", sitters.GetById);
-    app.param("ownerId", owners.GetById);
-    app.param("stayId", stays.GetById);
+    app.param("ownerId", owners.getOwnerById);
+    app.param("sitterId", sitters.getSitterById);
+    app.param("stayId", stays.getStayById);
 
     // The default route will serve up the index page for Angular.
     app.get("*", function(request, response)

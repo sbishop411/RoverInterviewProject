@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const SitterSchema = require("../schemas/sitter-schema");
 
-exports.GetAll = async function (request, response)
+exports.getAllSitters = async function (request, response)
 {
     try
     {
@@ -21,7 +21,7 @@ exports.GetAll = async function (request, response)
     }
 }
 
-exports.Add = async function (request, response)
+exports.addSitter = async function (request, response)
 {
     // TODO: Implement field value validation.
     try
@@ -44,7 +44,7 @@ exports.Add = async function (request, response)
     }
 }
 
-exports.GetById = async function (request, response, next, id)
+exports.getSitterById = async function (request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate a sitter from a sitter ID before passing it to an endpoint.
     if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
@@ -57,7 +57,7 @@ exports.GetById = async function (request, response, next, id)
 
         if (!sitter)
         {
-            response.status(404).send({ message: "The requested sitter does not exist." });
+            response.status(404).send({ message: "A sitter with the specified ID was not found." });
         }
         else
         {
@@ -72,7 +72,7 @@ exports.GetById = async function (request, response, next, id)
     }
 }
 
-exports.GetSingle = function (request, response)
+exports.getSingleSitter = function (request, response)
 {
     try
     {
@@ -85,7 +85,7 @@ exports.GetSingle = function (request, response)
     }
 };
 
-exports.Replace = async function (request, response)
+exports.replaceSitter = async function (request, response)
 {
     try
     {
@@ -113,7 +113,7 @@ exports.Replace = async function (request, response)
     }
 }
 
-exports.Update = async function (request, response)
+exports.updateSitter = async function (request, response)
 {
     try
     {
@@ -136,7 +136,7 @@ exports.Update = async function (request, response)
     }
 }
 
-exports.Delete = async function (request, response)
+exports.deleteSitter = async function (request, response)
 {
     try
     {
