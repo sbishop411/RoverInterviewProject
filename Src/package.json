@@ -29,6 +29,8 @@
     "grunt-mocha": "^1.2.0",
     "grunt-nodemon": "^0.4.2",
     "grunt-run": "^0.8.1",
-    "mongoose": "^5.10.3"
+    "mongoose": "^5.10.3",
+    "swagger-ui-express": "^4.1.4",
+    "yamljs": "^0.3.0"
   }
 }

@@ -1,6 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const swaggerUi = require("swagger-ui-express");
+const yaml = require("yamljs");
+const openApiSpec = yaml.load("./api-definition.yaml");
 const chalk = require("chalk");
 const addRoutes = require("./server/routes");
 const seedData = require("./server/utilities/data-seeder/seed-data");
@@ -46,6 +49,7 @@ async function main()
     app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(express.static(__dirname + "/public"));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
     // Get the routes for our APIs that we defined in routes.js
     addRoutes(app);

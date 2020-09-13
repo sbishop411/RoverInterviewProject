@@ -1,0 +1,787 @@
+openapi: 3.0.3
+info:
+    title: Rover Interview Project
+    description: A simple API designed to meet the requirements of an interview project I did for Rover.com in 2018.
+    contact:
+        name: Scott Bishop
+        email: sbishop411@gmail.com
+        url: "https://github.com/sbishop411"
+    license:
+        name: GNU GPLv3
+        url: "https://www.gnu.org/licenses/gpl-3.0.en.html"
+    version: 0.1.0
+servers:
+    - url: "http://{domain}:{port}/api/"
+      description: Local development server.
+      variables:
+          domain:
+              default: localhost
+              description: The domain at which the API is located.
+          port:
+              default: "56432"
+              description: The port on which the API server will run.
+paths:
+    /owners:
+        get:
+            summary: Returns all owners.
+            description: "Retrieves all owners from the Owners collection in MongoDB, and returns them to the caller with their Stays."
+            operationId: getAllOwners
+            responses:
+                "200":
+                    description: The owners were successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Owner"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        post:
+            summary: Adds a new owner.
+            description: "Creates a new owner using the information supplied."
+            operationId: addOwner
+            requestBody:
+                description: The owner object that the client would like to create.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Owner"
+            responses:
+                "201":
+                    description: The owner was successfully created.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Owner"
+                "400":
+                    $ref: "#/components/responses/InvalidOwner"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+    "/owners/{id}":
+        get:
+            summary: Gets a single specific owner.
+            description: "Returns an owner based on the ID supplied."
+            operationId: getSingleOwner
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the owner to fetch.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "200":
+                    description: The owner was successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Owner"
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/OwnerNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        put:
+            summary: Replaces a single specific owner.
+            description: "Replaces an owner based on the ID supplied with the supplied information."
+            operationId: replaceOwner
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the owner to replace.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: The owner object that the client would like to overwrite the current owner with.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Owner"
+            responses:
+                "200":
+                    description: The owner was successfully replaced.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Owner"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the owner object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidOwner"
+                "404":
+                    $ref: "#/components/responses/OwnerNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        patch:
+            summary: Updates a single specific owner.
+            description: "Updates an owner based on the ID supplied with the supplied information."
+            operationId: updateOwner
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the owner to update.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: Any writable field on the owner schema can be included here to have that value on the existing owner overwritten.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                Name:
+                                    type: string
+                                    description: The new value for the owner's name.
+                                    example: "Andy D."
+                                PhoneNumber:
+                                    type: string
+                                    description: The new value for the owner's phone number.
+                                    example: "+15556667777"
+                                EmailAddress:
+                                    type: string
+                                    format: email
+                                    description: The new value for the owner's email address.
+                                    example: burtmacklin@mouserat.com
+                                Image:
+                                    type: string
+                                    format: uri
+                                    description: The new value for the owner's image URL.
+                                    example: "https://vignette.wikia.nocookie.net/parksandrecreation/images/e/ea/Burt_Macklin.png"
+                                Stays:
+                                    type: array
+                                    description: The new collection of stays that should be associated with the owner.
+                                    uniqueItems: true
+                                    items:
+                                        anyOf:
+                                            - $ref: "#/components/schemas/Stay"
+                                            - $ref: "#/components/schemas/MongoId"
+            responses:
+                "200":
+                    description: The owner was successfully updated.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Owner"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the fields to update on the owner object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidOwner"
+                "404":
+                    $ref: "#/components/responses/OwnerNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        delete:
+            summary: Deletes a single specific owner.
+            description: "Deletes a single owner based on the ID supplied."
+            operationId: deleteOwner
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the owner to delete.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "204":
+                    description: The owner was successfully deleted.
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/OwnerNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+    /sitters:
+        get:
+            summary: Returns all sitters.
+            description: "Retrieves all sitters from the Sitters collection in MongoDB, and returns them to the caller with their Stays, sorted by OverallSitterRank."
+            operationId: getAllSitters
+            responses:
+                "200":
+                    description: The sitters were successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Sitter"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        post:
+            summary: Adds a new sitter.
+            description: "Creates a new sitter using the information supplied."
+            operationId: addSitter
+            requestBody:
+                description: The sitter object that the client would like to create.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Sitter"
+            responses:
+                "201":
+                    description: The sitter was successfully created.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Sitter"
+                "400":
+                    $ref: "#/components/responses/InvalidSitter"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+    "/sitters/{id}":
+        get:
+            summary: Gets a single specific sitter.
+            description: "Returns a sitter based on the ID supplied."
+            operationId: getSingleSitter
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the sitter to fetch.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "200":
+                    description: The sitter was successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Sitter"
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/SitterNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        put:
+            summary: Replaces a single specific sitter.
+            description: "Replaces an sitter based on the ID supplied with the supplied information."
+            operationId: replaceSitter
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the sitter to replace.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: The sitter object that the client would like to overwrite the current sitter with.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Sitter"
+            responses:
+                "200":
+                    description: The sitter was successfully replaced.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Sitter"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the sitter object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidSitter"
+                "404":
+                    $ref: "#/components/responses/SitterNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        patch:
+            summary: Updates a single specific sitter.
+            description: "Updates an sitter based on the ID supplied with the supplied information."
+            operationId: updateSitter
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the sitter to update.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: Any writable field on the sitter schema can be included here to have that value on the existing sitter overwritten.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                Name:
+                                    type: string
+                                    description: The new value for the sitter's name.
+                                    example: Leslie K.
+                                PhoneNumber:
+                                    type: string
+                                    description: The new value for the sitter's phone number.
+                                    example: "+12177491925"
+                                EmailAddress:
+                                    type: string
+                                    format: email
+                                    description: The new value for the sitter's email address.
+                                    example: lknope@pawnee.gov
+                                Image:
+                                    type: string
+                                    format: uri
+                                    description: The new value for the sitter's image URL.
+                                    example: "https://vignette.wikia.nocookie.net/parksandrecreation/images/3/38/Leslie.png"
+                                Stays:
+                                    type: array
+                                    description: The new collection of stays that should be associated with the sitter.
+                                    uniqueItems: true
+                                    items:
+                                        anyOf:
+                                            - $ref: "#/components/schemas/Stay"
+                                            - $ref: "#/components/schemas/MongoId"
+            responses:
+                "200":
+                    description: The sitter was successfully updated.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Sitter"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the fields to update on the sitter object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidSitter"
+                "404":
+                    $ref: "#/components/responses/SitterNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        delete:
+            summary: Deletes a single specific sitter.
+            description: "Deletes a single sitter based on the ID supplied."
+            operationId: deleteSitter
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the sitter to delete.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "204":
+                    description: The sitter was successfully deleted.
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/SitterNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+    /stays:
+        get:
+            summary: Returns all stays.
+            description: "Retrieves all stays from the Stays collection in MongoDB, unsorted."
+            operationId: getAllStays
+            responses:
+                "200":
+                    description: The stays were successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Stay"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        post:
+            summary: Adds a new stay.
+            description: "Creates a new stay using the information supplied."
+            operationId: addStay
+            requestBody:
+                description: The stay object that the client would like to create.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Stay"
+            responses:
+                "201":
+                    description: The stay was successfully created.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Stay"
+                "400":
+                    $ref: "#/components/responses/InvalidStay"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+    "/stays/{id}":
+        get:
+            summary: Gets a single specific stay.
+            description: "Returns a stay based on the ID supplied."
+            operationId: getSingleStay
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the stay to fetch.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "200":
+                    description: The stay was successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Stay"
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/StayNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        put:
+            summary: Replaces a single specific stay.
+            description: "Replaces an stay based on the ID supplied with the supplied information."
+            operationId: replaceStay
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the stay to replace.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: The stay object that the client would like to overwrite the current stay with.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Stay"
+            responses:
+                "200":
+                    description: The stay was successfully replaced.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Stay"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the stay object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidStay"
+                "404":
+                    $ref: "#/components/responses/StayNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        patch:
+            summary: Updates a single specific stay.
+            description: "Updates an stay based on the ID supplied with the supplied information."
+            operationId: updateStay
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the stay to update.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            requestBody:
+                description: Any writable field on the stay schema can be included here to have that value on the existing stay overwritten.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                Owner:
+                                    description: The ID for the new owner that you'd like to associate with this stay.
+                                    anyOf:
+                                        - $ref: "#/components/schemas/Owner"
+                                        - $ref: "#/components/schemas/MongoId"
+                                Sitter:
+                                    description: The ID for the new sitter that you'd like to associate with this stay.
+                                    anyOf:
+                                        - $ref: "#/components/schemas/Sitter"
+                                        - $ref: "#/components/schemas/MongoId"
+                                Dogs:
+                                    type: string
+                                    description: The new value for the "|" delimited list of the names of the dogs that were present for the stay.
+                                    example: Lil' Sebastian
+                                StartDate:
+                                    type: string
+                                    format: date
+                                    description: The new value for the date on which the stay began.
+                                    example: "2016-06-24"
+                                EndDate:
+                                    type: string
+                                    format: date
+                                    description: The new value for the date on which the stay ended.
+                                    example: "2016-06-29"
+                                ReviewText:
+                                    type: string
+                                    description: The new value for the text from the review that the owner left for this stay.
+                                    example: OMG OMG OMG IT'S LIL' SEBASTIAN.
+                                Rating:
+                                    type: number
+                                    format: int32
+                                    description: "The new value for the owner's rating of the stay from their review, on a scale from 1 to 5 inclusive."
+                                    example: 5
+                                    minimum: 1
+                                    maximum: 5
+            responses:
+                "200":
+                    description: The stay was successfully updated.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Stay"
+                "400":
+                    description: Invalid request due to an issue parsing either the ID or the fields to update on the stay object.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                - $ref: "#/components/responses/InvalidId"
+                                - $ref: "#/components/responses/InvalidStay"
+                "404":
+                    $ref: "#/components/responses/StayNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+        delete:
+            summary: Deletes a single specific stay.
+            description: "Deletes a single stay based on the ID supplied."
+            operationId: deleteStay
+            parameters:
+                - name: id
+                  in: path
+                  description: The ID of the stay to delete.
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 24
+                      maxLength: 24
+            responses:
+                "204":
+                    description: The stay was successfully deleted.
+                "400":
+                    $ref: "#/components/responses/InvalidId"
+                "404":
+                    $ref: "#/components/responses/StayNotFound"
+                "500":
+                    $ref: "#/components/responses/UnknownError"
+components:
+    schemas:
+        MongoId:
+            type: string
+            description: A representation of an identity key of a document in MongoDB.
+            minLength: 24
+            maxLength: 24
+            example: 5f5b1b7299331369e4dc2f78
+        Owner:
+            type: object
+            description: A representation of an owner.
+            properties:
+                _id:
+                    type: string
+                    description: A unique identifier for the owner.
+                    minLength: 24
+                    maxLength: 24
+                    example: 5f5b1b7299331369e4dc2f78
+                Name:
+                    type: string
+                    description: The owner's name.
+                    example: April L.
+                PhoneNumber:
+                    type: string
+                    description: The owner's phone number.
+                    example: "+19999999999"
+                EmailAddress:
+                    type: string
+                    format: email
+                    description: The owner's email address.
+                    example: satan@pawnee.gov
+                Image:
+                    type: string
+                    format: uri
+                    description: A URL pointing to an image representing the owner.
+                    example: "https://static.wikia.nocookie.net/characters/images/6/6f/April_Ludgate.jpg"
+                Stays:
+                    type: array
+                    description: A collection of stays associated with the owner.
+                    uniqueItems: true
+                    items:
+                        $ref: "#/components/schemas/Stay"
+            required:
+                - Name
+                - PhoneNumber
+                - EmailAddress
+        Sitter:
+            type: object
+            description: A representation of an owner.
+            properties:
+                _id:
+                    type: string
+                    description: A unique identifier for the sitter.
+                    minLength: 24
+                    maxLength: 24
+                    example: 5f5b1b7e9933133ef4dc2f79
+                Name:
+                    type: string
+                    description: The sitter's name.
+                    example: Ron S.
+                PhoneNumber:
+                    type: string
+                    description: The sitter's phone number.
+                    example: "+12345678910"
+                EmailAddress:
+                    type: string
+                    format: email
+                    description: The sitter's email address.
+                    example: rswanson@pawnee.gov
+                Image:
+                    type: string
+                    format: uri
+                    description: A URL pointing to an image representing the sitter.
+                    example: "https://upload.wikimedia.org/wikipedia/en/a/ae/RonSwanson.jpg"
+                OverallSitterRank:
+                    type: number
+                    description: A calculated value used for ranking sitters. It is based on the sitter's RatingsScore and SitterScore.
+                    example: 1.19230769231
+                    readOnly: true
+                RatingsScore:
+                    type: number
+                    description: The calculated average of the ratings on all stays associated with this Sitter.
+                    example: 3.5
+                    readOnly: true
+                SitterScore:
+                    type: number
+                    description: An arbitrary score calculated based on the sitter's name. It's the proportion of the english alphabet used in the sitter's name multiplied by 5.
+                    example: 0.76923076923
+                    readOnly: true
+                NumberOfStays:
+                    type: number
+                    format: int32
+                    description: The total number of stays that are associated with this sitter.
+                    example: 7
+                    readOnly: true
+                Stays:
+                    type: array
+                    description: A collection of stays associated with the sitter.
+                    uniqueItems: true
+                    items:
+                        $ref: "#/components/schemas/Stay"
+            required:
+                - Name
+                - PhoneNumber
+                - EmailAddress
+        Stay:
+            type: object
+            description: A representation of an stay.
+            properties:
+                _id:
+                    type: string
+                    description: A unique identifier for the stay.
+                    minLength: 24
+                    maxLength: 24
+                    example: 5f5b1bb8993313215edc2f7d
+                Owner:
+                    description: The owner that this stay is associated with.
+                    $ref: "#/components/schemas/Owner"
+                Sitter:
+                    description: The sitter that this stay is associated with.
+                    $ref: "#/components/schemas/Sitter"
+                Dogs:
+                    type: string
+                    description: 'A list of the names of the dogs that were present for the stay, with each name separated by a "|" character.'
+                    example: Champion
+                StartDate:
+                    type: string
+                    format: date
+                    description: The date on which the stay began.
+                    example: "2016-05-14"
+                EndDate:
+                    type: string
+                    format: date
+                    description: The date on which the stay ended.
+                    example: "2016-05-19"
+                ReviewText:
+                    type: string
+                    description: The text from the review that the owner left for this stay.
+                    example: "Everyone sucks, but Ron is cool and Champion likes him, so 5 stars."
+                Rating:
+                    type: number
+                    format: int32
+                    description: "The owner's rating of the stay from their review, on a scale from 1 to 5 inclusive."
+                    example: 4
+                    minimum: 1
+                    maximum: 5
+            required:
+                - Owner
+                - Sitter
+                - Dogs
+                - StartDate
+                - EndDate
+                - ReviewText
+                - Rating
+    responses:
+        UnknownError:
+            description: An unexpected error occurred while processing the request.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            message:
+                                type: string
+                                description: A message with the server with a detailed explanation of the error.
+        InvalidId:
+            description: The supplied ID was in an invalid format.
+        InvalidOwner:
+            description: The supplied owner data is invalid.
+        InvalidSitter:
+            description: The supplied sitter data is invalid.
+        InvalidStay:
+            description: The supplied stay data is invalid.
+        OwnerNotFound:
+            description: An owner with the specified ID was not found.
+        SitterNotFound:
+            description: A sitter with the specified ID was not found.
+        StayNotFound:
+            description: A stay with the specified ID was not found.
