@@ -5,7 +5,7 @@ info:
     contact:
         name: Scott Bishop
         email: sbishop411@gmail.com
-        url: "https://github.com/sbishop411"
+        url: "https://github.com/scottbishopdev"
     license:
         name: GNU GPLv3
         url: "https://www.gnu.org/licenses/gpl-3.0.en.html"
@@ -26,6 +26,9 @@ paths:
             summary: Returns all owners.
             description: "Retrieves all owners from the Owners collection in MongoDB, and returns them to the caller with their Stays."
             operationId: getAllOwners
+
+
+
             responses:
                 "200":
                     description: The owners were successfully retrieved.

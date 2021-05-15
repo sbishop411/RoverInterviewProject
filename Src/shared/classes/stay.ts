@@ -1,8 +1,100 @@
-const mongoose = require("mongoose");
-const chalk = require("chalk");
+import { prop, Ref, queryMethod, ReturnModelType, getModelForClass } from "@typegoose/typegoose";
+import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
+import { BaseEntity } from "./base";
+import { Owner } from "./owner";
+import { Sitter } from "./sitter";
+
+interface QueryHelpers {
+	findMatching: AsQueryMethod<typeof findMatching>;
+}
+
+function findMatching(this: ReturnModelType<typeof Stay, QueryHelpers>, other: Stay) {
+	return this.where({
+        owner: other.owner,
+        sitter: other.sitter,
+        dogs: other.dogs,
+        startDate: other.startDate,
+		endDate: other.endDate,
+		reviewText: other.reviewText,
+		rating: other.rating
+    });
+}
+
+@queryMethod(findMatching)
+export class Stay extends BaseEntity {
+	@prop({
+		require: [true, "The stay must be associated with an owner."],
+		ref: () => Owner,
+	})
+	public owner: Ref<Owner>;
+
+	@prop({
+		require: [true, "The stay must be associated with a sitter."],
+		ref: () => Sitter,
+	})
+	public sitter: Ref<Sitter>;
+
+	@prop({
+		require: [true, "The stay must be associated with at least one dog."],
+	})
+	public dogs: string;
+
+	@prop({
+		require: [true, "The stay must have a start date."],
+	})
+	public startDate: Date;
+
+	@prop({
+		require: [true, "The stay must have an end date."],
+	})
+	public endDate: Date;
+
+	@prop()
+	public reviewText: string;
+
+	@prop({
+		require: true,
+        min: [1, "Stay ratings must be between 1 and 5 inclusive."],
+        max: [5, "Stay ratings must be between 1 and 5 inclusive."]
+	})
+	public rating: number;
+
+
+	constructor(owner: Owner, sitter: Sitter, dogs: string, startDate: Date, endDate: Date, reviewText: string, rating: number) {
+		super();
+
+		this.owner = owner;
+		this.sitter = sitter;
+		this.dogs = dogs;
+		this.startDate = startDate;
+		this.endDate = endDate;
+		this.reviewText = reviewText;
+		this.rating = rating;
+	}
+}
+
+
+export const StaySchema = getModelForClass(Stay);
+
+
+//export = getModelForClass(StaySchema);
+
+
+
+
+
+
+
+
+
+
+/*
+import mongoose = require("mongoose");
+import chalk = require("chalk");
+import OwnerSchema = require("./owner-schema");
+import SitterSchema = require("./sitter-schema");
+
 const Schema = mongoose.Schema;
-const OwnerSchema = require("./owner-schema");
-const SitterSchema = require("./sitter-schema");
 
 var StaySchema = new Schema(
 {
@@ -230,4 +322,5 @@ StaySchema.query.findMatching = function (other)
     }).populate("Sitter").populate("Owner");
 }
 
-module.exports = mongoose.model("Stay", StaySchema);
+export = mongoose.model("Stay", StaySchema);
+*/

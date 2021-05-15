@@ -1,0 +1,10 @@
+{
+    "extends": "../tsconfig.json",
+	"compilerOptions": {
+		"target": "es5",
+		"module": "es6"
+    },
+	"include": ["./*.ts"],
+	"exclude": ["**/*.test.ts", "../src/client"],
+	"references": [{ "path": "../shared" }]
+}

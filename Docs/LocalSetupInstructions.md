@@ -8,7 +8,7 @@ You'll need both [Git](https://git-scm.com/) and [Docker](https://www.docker.com
 To get started, you'll need the repository cloned locally. Navigate to the parent directory where you'd like the app to run from, then open a command line and execute the following:
 ```bash
 # Clone the repository down
-$ git clone https://github.com/sbishop411/RoverInterviewProject
+$ git clone https://github.com/scottbishopdev/RoverInterviewProject
 
 # Navigate into the repository directory
 $ cd RoverInterviewProject
@@ -71,4 +71,4 @@ That's it! You should now be able to access the website by opening a browser and
 
 ---
 
-**Note:** Currently, the project does not automatically load the supplied data defined in the .csv file into MongoDB. A [project](https://github.com/sbishop411/RoverInterviewProject/projects/4) currently exists to accomplish this.
+**Note:** Currently, the project does not automatically load the supplied data defined in the .csv file into MongoDB. A [project](https://github.com/scottbishopdev/RoverInterviewProject/projects/4) currently exists to accomplish this.

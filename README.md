@@ -1,14 +1,14 @@
 # RoverInterviewProject
 <p align="center">
-    <a href="https://github.com/sbishop411/RoverInterviewProject/issues?q=is%3Aopen+is%3Aissue+label%3Abug">
-        <img alt="Open bugs" src="https://img.shields.io/github/issues/sbishop411/RoverInterviewProject/bug?color=yellow&label=bugs">
+    <a href="https://github.com/scottbishopdev/RoverInterviewProject/issues?q=is%3Aopen+is%3Aissue+label%3Abug">
+        <img alt="Open bugs" src="https://img.shields.io/github/issues/scottbishopdev/RoverInterviewProject/bug?color=yellow&label=bugs">
     </a>
     <a href="https://www.gnu.org/licenses/gpl-3.0">
         <img src="https://img.shields.io/badge/License-GPLv3-blue.svg">
     </a>
 </p>
 
-RoverInterviewProject is a project that I originally completed in the spring of 2018 while interviewing for a position with Rover.com. In short, the assignment required me to create a rudimentary website with some basic functionality to emulate Rover.com, and to populate that website with some data from a provided .csv file. The full assignment can be read [here](https://github.com/sbishop411/RoverInterviewProject/blob/master/Docs/Assignment.md). I chose the [MEAN stack](https://en.wikipedia.org/wiki/MEAN_(solution_stack)) for the project, which afforded me many opportunities to learn and experiment with several technologies that I hadn't had the change to otherwise.
+RoverInterviewProject is a project that I originally completed in the spring of 2018 while interviewing for a position with Rover.com. In short, the assignment required me to create a rudimentary website with some basic functionality to emulate Rover.com, and to populate that website with some data from a provided .csv file. The full assignment can be read [here](https://github.com/scottbishopdev/RoverInterviewProject/blob/master/Docs/Assignment.md). I chose the [MEAN stack](https://en.wikipedia.org/wiki/MEAN_(solution_stack)) for the project, which afforded me many opportunities to learn and experiment with several technologies that I hadn't had the change to otherwise.
 
 ---
 

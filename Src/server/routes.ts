@@ -1,9 +1,10 @@
-var path = require("path");
-var stays = require("./controllers/stay-controller");
-var sitters = require("./controllers/sitter-controller");
-var owners = require("./controllers/owner-controller");
+import { Application, Request, Response } from "express";
+import path from "path";
+import * as stays from "./controllers/stay-controller";
+import * as sitters from "./controllers/sitter-controller";
+import * as owners from "./controllers/owner-controller";
 
-module.exports = function(app)
+export function addRoutes(app: Application)
 {
     app.route("/api/owners")
         .get(owners.getAllOwners)
@@ -39,10 +40,10 @@ module.exports = function(app)
     app.param("sitterId", sitters.getSitterById);
     app.param("stayId", stays.getStayById);
 
-    // The default route will serve up the index page for Angular.
-    app.get("*", function(request, response)
+    // The default route will serves up the index page for the web client.
+    app.get("*", function(request: Request, response: Response)
     {
         // TODO: Determine if this is the right place for the base index page. Keep in mind that all routing defined here should be for the backend ONLY.
-        response.sendFile(path.resolve(__dirname + "/../public/index.html"));
+        response.sendFile(path.resolve(__dirname + "/../client/index.html"));
     });
 };

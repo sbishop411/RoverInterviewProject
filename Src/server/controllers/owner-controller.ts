@@ -1,11 +1,12 @@
-const mongoose = require("mongoose");
-const OwnerSchema = require("../schemas/owner-schema");
+import { Types } from "mongoose";
+import { Request, Response } from "express";
+import { OwnerSchema as Owners } from "../../shared/classes/owner";
 
-exports.getAllOwners = async function (request, response)
+export async function getAllOwners(request: Request, response: Response)
 {
     try
     {
-        var owners = await OwnerSchema.find().exec();
+        var owners = await Owners.find().exec();
 
         response.status(200).json(owners);
     }
@@ -16,12 +17,12 @@ exports.getAllOwners = async function (request, response)
     }
 }
 
-exports.addOwner = async function(request, response)
+export async function addOwner(request: Request, response: Response)
 {
     // TODO: Implement field value validation.
-    try
+	try
     {
-        let owner = await OwnerSchema.create(request.body);
+        let owner = await Owners.create(request.body);
 
         response.status(201).json(owner);
     }
@@ -39,14 +40,20 @@ exports.addOwner = async function(request, response)
     }
 }
 
-exports.getOwnerById = async function (request, response, next, id)
+export async function getOwnerFromRequest(request: Request)
+{
+
+}
+
+
+export async function getOwnerById(request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate an owner from an owner ID before passing it to an endpoint.
-    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
+    if (!Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
 
     try
     {
-        let owner = await OwnerSchema.findById(id)
+		let owner = await Owners.findById(id)
             .populate("Stays")
             .exec();
 
@@ -67,7 +74,7 @@ exports.getOwnerById = async function (request, response, next, id)
     }
 }
 
-exports.getSingleOwner = function(request, response)
+export function getSingleOwner(request, response)
 {
     try
     {
@@ -80,11 +87,11 @@ exports.getSingleOwner = function(request, response)
     }
 };
 
-exports.replaceOwner = async function(request, response)
+export async function replaceOwner(request, response)
 {
     try
     {
-        let owner = await OwnerSchema.findOneAndReplace({ _id: request.owner._id }, request.body, { "new": true });
+        let owner = await Owners.findOneAndReplace({ _id: request.owner._id }, request.body, { "new": true });
 
         response.status(200).json(owner);
     }
@@ -102,7 +109,7 @@ exports.replaceOwner = async function(request, response)
     }
 }
 
-exports.updateOwner = async function (request, response)
+export async function updateOwner(request, response)
 {
     try
     {
@@ -125,7 +132,7 @@ exports.updateOwner = async function (request, response)
     }
 }
 
-exports.deleteOwner = async function(request, response)
+export async function deleteOwner(request, response)
 {
     try
     {

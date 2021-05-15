@@ -1,12 +1,12 @@
-const mongoose = require("mongoose");
-const StaySchema = require("../schemas/stay-schema");
+import { Types } from "mongoose";
+import { StaySchema as Stays } from "../../shared/classes/stay";
 
-exports.getAllStays = async function (request, response)
+export async function getAllStays(request, response)
 {
     // TODO: Returning this entire populated data set for 500 records is about 460 MB over the wire. Not great. We should implement pagination or a count limit.
     try
     {
-        var stays = await StaySchema
+        var stays = await Stays
             .find()
             .exec();
 
@@ -19,12 +19,12 @@ exports.getAllStays = async function (request, response)
     }
 }
 
-exports.addStay = async function (request, response)
+export async function addStay(request, response)
 {
     // TODO: Implement field value validation.
     try
     {
-        let stay = await StaySchema.create(request.body);
+        let stay = await Stays.create(request.body);
 
         response.status(201).json(stay);
     }
@@ -43,14 +43,14 @@ exports.addStay = async function (request, response)
     }
 }
 
-exports.getStayById = async function (request, response, next, id)
+export async function getStayById(request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate a stay from a stay ID before passing it to an endpoint.
-    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
+    if (!Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
 
     try
     {
-        let stay = await StaySchema.findById(id)
+        let stay = await Stays.findById(id)
             .populate("Owner")
             .populate("Sitter")
             .exec();
@@ -72,7 +72,7 @@ exports.getStayById = async function (request, response, next, id)
     }
 }
 
-exports.getSingleStay = function (request, response)
+export function getSingleStay(request, response)
 {
     try
     {
@@ -85,7 +85,7 @@ exports.getSingleStay = function (request, response)
     }
 };
 
-exports.replaceStay = async function (request, response)
+export async function replaceStay(request, response)
 {
     try
     {
@@ -114,7 +114,7 @@ exports.replaceStay = async function (request, response)
     }
 }
 
-exports.updateStay = async function (request, response)
+export async function updateStay(request, response)
 {
     try
     {
@@ -137,7 +137,7 @@ exports.updateStay = async function (request, response)
     }
 }
 
-exports.deleteStay = async function (request, response)
+export async function deleteStay(request, response)
 {
     try
     {

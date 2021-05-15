@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"outDir": "./src/dist/",
+		"sourceMap": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true
+	},
+	"include": [
+		"src"
+	]
+}

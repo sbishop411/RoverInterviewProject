@@ -1,11 +1,11 @@
-const mongoose = require("mongoose");
-const SitterSchema = require("../schemas/sitter-schema");
+import { Types } from "mongoose";
+import { SitterSchema as Sitters } from "../../shared/classes/sitter";
 
-exports.getAllSitters = async function (request, response)
+export async function getAllSitters(request, response)
 {
     try
     {
-        var sitters = await SitterSchema
+        var sitters = await Sitters
             .find()
             // TODO: See if this line is necessary.
             .populate("Stays", "Rating")
@@ -21,12 +21,12 @@ exports.getAllSitters = async function (request, response)
     }
 }
 
-exports.addSitter = async function (request, response)
+export async function addSitter(request, response)
 {
     // TODO: Implement field value validation.
     try
     {
-        let sitter = await SitterSchema.create(request.body);
+        let sitter = await Sitters.create(request.body);
 
         response.status(201).json(sitter);
     }
@@ -44,14 +44,14 @@ exports.addSitter = async function (request, response)
     }
 }
 
-exports.getSitterById = async function (request, response, next, id)
+export async function getSitterById(request, response, next, id)
 {
     // Note: This is what gets run when the router needs to populate a sitter from a sitter ID before passing it to an endpoint.
-    if (!mongoose.Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
+    if (!Types.ObjectId.isValid(id)) return response.status(400).send({ message: `The supplied id "${id}" is not valid.` });
 
     try
     {
-        let sitter = await SitterSchema.findById(id)
+        let sitter = await Sitters.findById(id)
             .populate("Stays")
             .exec();
 
@@ -72,7 +72,7 @@ exports.getSitterById = async function (request, response, next, id)
     }
 }
 
-exports.getSingleSitter = function (request, response)
+export function getSingleSitter(request, response)
 {
     try
     {
@@ -85,7 +85,7 @@ exports.getSingleSitter = function (request, response)
     }
 };
 
-exports.replaceSitter = async function (request, response)
+export async function replaceSitter(request, response)
 {
     try
     {
@@ -113,7 +113,7 @@ exports.replaceSitter = async function (request, response)
     }
 }
 
-exports.updateSitter = async function (request, response)
+export async function updateSitter(request, response)
 {
     try
     {
@@ -136,7 +136,7 @@ exports.updateSitter = async function (request, response)
     }
 }
 
-exports.deleteSitter = async function (request, response)
+export async function deleteSitter(request, response)
 {
     try
     {
