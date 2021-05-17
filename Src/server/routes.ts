@@ -1,8 +1,9 @@
+/*
 import { Application, Request, Response } from "express";
 import path from "path";
-import * as stays from "./controllers/stay-controller";
-import * as sitters from "./controllers/sitter-controller";
-import * as owners from "./controllers/owner-controller";
+import * as stays from "./controllers/stay.controller";
+import * as sitters from "./controllers/sitter.controller";
+import * as owners from "./controllers/owner.controller";
 
 export function addRoutes(app: Application)
 {
@@ -44,6 +45,8 @@ export function addRoutes(app: Application)
     app.get("*", function(request: Request, response: Response)
     {
         // TODO: Determine if this is the right place for the base index page. Keep in mind that all routing defined here should be for the backend ONLY.
-        response.sendFile(path.resolve(__dirname + "/../client/index.html"));
+        //response.sendFile(path.resolve(__dirname + "/../client/index.html"));
+		response.render(path.resolve(__dirname + "/../client/index.html"), { title: "Rover Interview Project" });
     });
 };
+*/

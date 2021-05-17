@@ -1,7 +1,20 @@
-import { prop, Ref, getModelForClass } from "@typegoose/typegoose";
-import { BaseEntity } from "./base";
+import { prop, pre, modelOptions, Ref } from "@typegoose/typegoose";
+import { BaseEntity } from "./baseEntity";
 import { Stay } from "./stay";
 
+@modelOptions({
+	options: {
+		customName: "Sitters"
+	},
+	schemaOptions: {
+		collection: "Sitters"
+	}
+})
+@pre<Sitter>("save", function(this: Sitter, next: any) {
+	this._ratingsScore = this.getRatingsScore()
+	this._overallSitterRank = this.getOverallSitterRank()
+	next();
+})
 export class Sitter extends BaseEntity {
 	@prop({
 		required: [true, "The sitter must have a name."],
@@ -30,31 +43,32 @@ export class Sitter extends BaseEntity {
 
 	@prop({
 		ref: () => Stay,
+		default: []
 	})
 	private _stays: Array<Ref<Stay>>;
 
+	// Note: We need to actually store these calculated values since we'll be indexing on them.
 	@prop({})
 	private _overallSitterRank: number;
 
 	@prop({})
 	private _ratingsScore: number;
 
-
 	get stays(): Array<Ref<Stay>> {
 		return this._stays;
 	}
 
-	get OverallSitterRank(): number {
+	get overallSitterRank(): number {
 		return this._overallSitterRank;
 	}
 
-	get RatingsScore(): number {
+	get ratingsScore(): number {
 		return this._ratingsScore;
 	}
 
-	get SitterScore(): number {
-		let preparedName: string = this.name ? this.name.toLowerCase().replace(/[^a-z0-9]/gi, '') : "";
-		let uniqueLetterCount: number = new Set(preparedName.split('')).size;
+	get sitterScore(): number {
+		let preparedName: string = this.name ? this.name.toLowerCase().replace(/[^a-z0-9]/gi, "") : "";
+		let uniqueLetterCount: number = new Set(preparedName.split("")).size;
 		
 		return (uniqueLetterCount / 26) * 5;
 	}
@@ -66,9 +80,15 @@ export class Sitter extends BaseEntity {
 		this.image = image;
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
-		this._stays = stays;
+		this._stays = stays as Array<Ref<Stay>>;
+
+		//this.updateRatingsScore();
+		//this.updateOverallRank();
+		this._ratingsScore = this.getRatingsScore();
+		this._overallSitterRank = this.getOverallSitterRank();
 	}
 
+	/*
 	updateRatingsScore(): void {
 		if (this._stays.length == 0)
 		{
@@ -83,7 +103,25 @@ export class Sitter extends BaseEntity {
 			this._ratingsScore = (ratingsSum / this._stays.length);
 		}
 	}
+*/
 
+
+	getRatingsScore(): number {
+		if (this._stays.length == 0)
+		{
+			return 0;
+		}
+		else
+		{
+			let ratingsSum: number = this._stays
+				.map(stay => (stay as Stay).rating)         // TODO: We need to somehow resolve this Ref<Stay, ObjectId> into the actual Stay itself. What gives?
+				.reduce((runningTotal, rating) => (runningTotal + rating));
+			
+			return (ratingsSum / this._stays.length);
+		}
+	}
+
+/*
 	updateOverallRank(): void {
 		// If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
 		if (this._stays.length == 0)
@@ -96,16 +134,29 @@ export class Sitter extends BaseEntity {
 			this._overallSitterRank = (this.SitterScore * (1 - ratingWeight)) + (this._ratingsScore * ratingWeight);
 		}
 	}
+*/
+
+	getOverallSitterRank(): number {
+		// If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
+		if (this._stays.length == 0)
+		{
+			return this.sitterScore;
+		}
+		else
+		{
+			let ratingWeight = this._stays.length < 10 ? (this._stays.length / 10) : 1;
+			return (this.sitterScore * (1 - ratingWeight)) + (this._ratingsScore * ratingWeight);
+		}
+	}
 
 	// TODO: Maybe change the return type of this to boolean to return success/fail information.
 	addStay(stay: Stay): void
 	{
 		this._stays.push(stay);
-		this.updateRatingsScore();
-		this.updateOverallRank();
+		this._ratingsScore = this.getRatingsScore()
+		this._overallSitterRank = this.getOverallSitterRank()
 	}
 
-	
 	//TODO: Need to figure out what the best way to remove a Stay will be. By its ID?
 	removeStay(stay: Stay)
 	{
@@ -114,17 +165,13 @@ export class Sitter extends BaseEntity {
 			this._stays.splice(index, 0);
 		}
 
-		this.updateRatingsScore();
-		this.updateOverallRank();
+		this._ratingsScore = this.getRatingsScore()
+		this._overallSitterRank = this.getOverallSitterRank()
 	}
-
-
-
 }
 
-
-export const SitterSchema = getModelForClass(Sitter);
-
+//export const SitterSchema = getModelForClass(Sitter);
+//expect(SitterSchema.modelName).to.be.equal("Sitters");
 
 
 
@@ -198,8 +245,8 @@ var SitterSchema = new Schema(
 
 SitterSchema.virtual("SitterScore").get(function()
 {
-    var preparedName = this.Name ? this.Name.toLowerCase().replace(/[^a-z0-9]/gi, '') : "";
-    let uniqueLetterCount = new Set(preparedName.split('')).size;
+    var preparedName = this.Name ? this.Name.toLowerCase().replace(/[^a-z0-9]/gi, "") : "";
+    let uniqueLetterCount = new Set(preparedName.split("")).size;
     
     return (uniqueLetterCount / 26) * 5;
 });

@@ -1,3 +1,4 @@
+/*
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { OwnerSchema as Owners } from "../../shared/classes/owner";
@@ -146,3 +147,4 @@ export async function deleteOwner(request, response)
         response.status(500).send({ message: "An error occurred while attempting to delete the owner." });
     }
 }
+*/

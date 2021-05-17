@@ -1,15 +1,32 @@
 {
+	"include": [
+		"./src/**/*"
+	],
+	"compileOnSave": false,
+	//"references": [{ "path": "./src/shared/classes/" }],
 	"compilerOptions": {
-		"outDir": "./src/dist/",
+		"target": "es5",
+		"module": "commonjs",
+		"jsx": "react-jsx",
+		"noEmit": true,
+		"strict": true,
 		"sourceMap": true,
 		"noImplicitAny": true,
+		"noImplicitReturns": true,
 		"strictNullChecks": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true
-	},
-	"include": [
-		"src"
-	]
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"composite": true,
+
+		"rootDir": "./src",
+		"outDir": "./dist",
+
+		"lib": [
+			"es6",
+			"dom"
+		]
+	}	
 }

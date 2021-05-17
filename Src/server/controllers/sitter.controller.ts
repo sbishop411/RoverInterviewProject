@@ -1,3 +1,4 @@
+/*
 import { Types } from "mongoose";
 import { SitterSchema as Sitters } from "../../shared/classes/sitter";
 
@@ -150,3 +151,4 @@ export async function deleteSitter(request, response)
         response.status(500).send({ message: "An error occurred while attempting to delete the sitter." });
     }
 }
+*/

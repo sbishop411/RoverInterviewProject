@@ -1,3 +1,4 @@
+/*
 import { Owner } from "../../../shared/classes/owner";
 import { Sitter } from "../../../shared/classes/sitter";
 import { Stay } from "../../../shared/classes/stay";
@@ -15,3 +16,4 @@ export class ScrapedReview
 		this.stay = new Stay(this.owner, this.sitter, csvLine[5].trim(), new Date(csvLine[8].trim()), new Date(csvLine[2].trim()), csvLine[3].trim(), parseInt(csvLine[0].trim()));
 	}
 }
+*/

@@ -1,7 +1,7 @@
-import { prop, Ref, queryMethod, ReturnModelType, getModelForClass } from "@typegoose/typegoose";
+import { prop, Ref, queryMethod, modelOptions, ReturnModelType } from "@typegoose/typegoose";
 import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
-import { BaseEntity } from "./base";
-import { Stay } from "./stay";
+import { BaseEntity } from "./baseEntity";
+//import { Stay } from "./stay";
 
 interface QueryHelpers {
 	findByName: AsQueryMethod<typeof findByName>;
@@ -11,7 +11,7 @@ interface QueryHelpers {
 function findByName(this: ReturnModelType<typeof Owner, QueryHelpers>, name: string) {
 	return this.findOne({
         name: name
-    }).populate("Stays");
+    })/*.populate("_stays")*/;
 }
 
 function findMatching(this: ReturnModelType<typeof Owner, QueryHelpers>, other: Owner) {
@@ -20,11 +20,21 @@ function findMatching(this: ReturnModelType<typeof Owner, QueryHelpers>, other: 
         PhoneNumber: other.phoneNumber,
         EmailAddress: other.emailAddress,
         Image: other.image
-    }).populate("Stays");
+    })/*.populate("_stays")*/;
 }
 
 //@pre()
 //@post()
+/*
+@modelOptions({
+	options: {
+		customName: "Owners"
+	},
+	schemaOptions: {
+		collection: "Owners"
+	}
+})
+*/
 @queryMethod(findByName)
 @queryMethod(findMatching)
 export class Owner extends BaseEntity {
@@ -53,30 +63,37 @@ export class Owner extends BaseEntity {
 	})
 	public emailAddress!: string;
 
+	/*
 	@prop({
 		ref: () => Stay,
+		default: []
 	})
 	private _stays: Array<Ref<Stay>>;
-	
-	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Array<Ref<Stay>>) {
+	*/
+
+	constructor(name: string, image: string, phoneNumber: string, emailAddress: string/*, stays?: Array<Ref<Stay>>*/) {
 		super();
 		this.name = name;
 		this.image = image;
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
-		this._stays = stays;
+		//this._stays = stays as Array<Ref<Stay>>;
 	}
 
+	/*
 	get Stays(): Array<Ref<Stay>> {
 		return this._stays;
 	}
+	*/
 
-	
+	/*
 	public addStay(stay: Stay): void
 	{
 		this._stays.push(stay);
 	}
+	*/
 
+	/*
 	public removeStay(stay: Stay): boolean
 	{
 		let index: number = this._stays.indexOf(stay.id, 0);
@@ -89,7 +106,7 @@ export class Owner extends BaseEntity {
 			return false;
 		}
 	}
-	
+	*/
 
 	public toString(): string {
 		return `Name: \"${this.name}\", PhoneNumber: \"${this.phoneNumber}\", EmailAddress: \"${this.emailAddress}\"`;
@@ -104,4 +121,5 @@ export class Owner extends BaseEntity {
 	}
 }
 
-export const OwnerSchema = getModelForClass(Owner);
+//export const OwnerSchema = getModelForClass(Owner);
+//expect(OwnerSchema.modelName).to.be.equal("Owners");

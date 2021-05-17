@@ -40,9 +40,9 @@ services:
     rover-interview-project:
         container_name: "RoverInterviewProject"
         build:
-            context: ./src/
-            dockerfile: ./Dockerfile
-        depends_on: 
+            context: ./
+            dockerfile: ./src/Dockerfile
+        depends_on:
             - "MongoDB"
         environment:
             - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@MongoDB:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}

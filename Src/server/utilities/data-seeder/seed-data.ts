@@ -1,14 +1,9 @@
+/*
 import fs from "fs";
 import csvParse from "csv-parse";
 import chalk from "chalk";
-import { getModelForClass } from "@typegoose/typegoose";
 import { ScrapedReview } from "./scraped-review";
-import { Owner } from "../../../shared/classes/owner";
-import { Sitter } from "../../../shared/classes/sitter";
-import { Stay } from "../../../shared/classes/stay";
-const Owners = getModelForClass(Owner);
-const Sitters = getModelForClass(Sitter);
-const Stays = getModelForClass(Stay);
+import { OwnerSchema as Owners, SitterSchema as Sitters, StaySchema as Stays } from "../../../shared/classes/schemas";
 
 const pathToFile = "./data/";
 const fileName = "reviews.csv";
@@ -28,9 +23,9 @@ var loadData = async function ()
 
 		fs.createReadStream(pathToFile + fileName)
 			.pipe(csvParse({ from_line: 2 }))
-			.on("data", (row) => scrapedReviews.push(new ScrapedReview(row)))
+			.on("data", (row: any) => scrapedReviews.push(new ScrapedReview(row)))
 			.on("end", () => resolve(scrapedReviews))
-			.on("error", error => reject(error));
+			.on("error", (error: any) => reject(error));
 	});
 
 	process.stdout.write(`Loading data from \"${fileName}\"`.padEnd(60, ".") + " ");
@@ -132,3 +127,4 @@ var saveData = async function (reviews: ScrapedReview[])
 		}
 	});
 }
+*/

@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.json",
+	"include": ["./src/client/**/*.tsx", "./src/shared/**/*.ts"],
+	"exclude": ["**/*.test.tsx", "./src/server"],
+	"references": [{ "path": "./src/shared/classes" }],
+	"compilerOptions": {
+		"noEmit": false
+    }
+}

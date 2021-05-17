@@ -1,6 +1,6 @@
-import { prop, Ref, queryMethod, ReturnModelType, getModelForClass } from "@typegoose/typegoose";
+import { prop, modelOptions, Ref, queryMethod, ReturnModelType } from "@typegoose/typegoose";
 import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
-import { BaseEntity } from "./base";
+import { BaseEntity } from "./baseEntity";
 import { Owner } from "./owner";
 import { Sitter } from "./sitter";
 
@@ -20,6 +20,14 @@ function findMatching(this: ReturnModelType<typeof Stay, QueryHelpers>, other: S
     });
 }
 
+@modelOptions({
+	options: {
+		customName: "Stays"
+	},
+	schemaOptions: {
+		collection: "Stays"
+	}
+})
 @queryMethod(findMatching)
 export class Stay extends BaseEntity {
 	@prop({
@@ -74,8 +82,8 @@ export class Stay extends BaseEntity {
 }
 
 
-export const StaySchema = getModelForClass(Stay);
-
+//export const StaySchema = getModelForClass(Stay);
+//expect(StaySchema.modelName).to.be.equal("Stay");
 
 //export = getModelForClass(StaySchema);
 

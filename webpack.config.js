@@ -1,60 +1,51 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const { ProgressPlugin } = require("webpack");
 
 module.exports = [
 	{
 		entry: {
-			app: path.join(__dirname, "src", "server", "server.ts")
-		},
-		target: "node",
-		resolve: {
-			extensions: [".ts", ".js"]
-		},
-		module: {
-			rules: [
-				{
-					test: /\.ts$/,
-					use: "ts-loader",
-					exclude: /node_modules/
-				}
-			]
-		},
-		output: {
-			filename: "server.js",
-			path: path.resolve(__dirname, "dist")
-		},
-		optimization: {
-			minimize: false
-		}
-	},
-	{
-		entry: {
-			app: path.join(__dirname, "src", "client", "app.tsx")
+			app: path.resolve(__dirname, "src", "client", "App.tsx")
 		},
 		target: "web",
 		resolve: {
-			extensions: [".tsx", ".ts", ".js"]
+			extensions: [".tsx", ".ts", ".json"]
 		},
 		module: {
 			rules: [
 				{
 					test: /\.tsx?$/,
-					use: "ts-loader",
+					use: [{
+						loader: "ts-loader",
+						options: {
+							configFile: "./tsconfig.client.json"
+						}
+					}],
 					exclude: /node_modules/
 				}
 			]
 		},
 		output: {
-			filename: "client.js",
-			path: path.resolve(__dirname, "dist")
+			path: path.join(__dirname, "dist", "client"),
+			filename: "[name].[contenthash].js"
 		},
 		optimization: {
 			minimize: false
 		},
 		plugins: [
+			new ProgressPlugin(),
+			new CleanWebpackPlugin(),
 			new HtmlWebpackPlugin({
-				template: path.join(__dirname, "src/client/", "index.html")
+				template: path.join(__dirname, "src", "client", "index.html")
 			})
 		]
+		/*
+		, devServer: {
+			contentBase: path.join(__dirname, "dist", "client"),
+			compress: true,
+			port: XXXX
+		}
+		*/
 	}
 ];

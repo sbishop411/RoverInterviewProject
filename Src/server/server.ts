@@ -1,13 +1,22 @@
+import path from "path";
 import express from "express";
 import mongoose from "mongoose";
 //import bodyParser from "body-parser";
 import swaggerUi from "swagger-ui-express";
 import yaml from "yamljs";
 import chalk from "chalk";
-import { addRoutes } from "./routes";
-import { seedData } from "./utilities/data-seeder/seed-data";
+//import { addRoutes } from "./routes";
 
-const openApiSpec = yaml.load("./api-definition.yaml");
+
+//import { seedData } from "./utilities/data-seeder/seed-data";
+
+
+import { OwnerRouter } from "./routes/owner.routes";
+//import { SitterRouter } from "./routes/sitter.routes";
+//import { StayRouter } from "./routes/stay.routes";
+
+
+const openApiSpec = yaml.load(path.resolve(__dirname, "../api-definition.yaml"));
 
 async function main() {
 	console.log(chalk.black("Hello, friend."));
@@ -16,7 +25,7 @@ async function main() {
 
     /*
     // If a NODE_ENV wasn't defined, assume that we're running in a development environment.
-    if (typeof process.env.NODE_ENV === 'undefined' || process.env.NODE_ENV === null)
+    if (typeof process.env.NODE_ENV === "undefined" || process.env.NODE_ENV === null)
     {
         process.env.NODE_ENV = "development";
     }
@@ -43,22 +52,37 @@ async function main() {
 	console.log(chalk.green("done."));
 
 	// Attempt to seed MongoDB with data.
-	await seedData();
+	//await seedData();
 
 	// Create our Express application.
 	var app = express();
 	//app.use(bodyParser.json());
-	//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
+	//app.use(bodyParser.json({ type: "application/vnd.api+json" }));
 	//app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(express.json({ type: "application/vnd.api+json" }));
 	app.use(express.urlencoded({ extended: true }));
 	//app.use(express.static(__dirname + "/public"));
 	//app.use(express.static("./public"));
-	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+	app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 	// Get the routes for our APIs that we defined in routes.js
 	// TODO: We should replace this with an implementation of express-openapi and express-openapi-validator.
-	addRoutes(app);
+	
+	//addRoutes(app);
+
+
+	
+	
+	
+	app.use("./routes/owners", OwnerRouter);
+	//app.use("./routes/sitters", SitterRouter);
+	//app.use("./routes/stay", StayRouter);
+
+
+
+
+
+
 
 	process.stdout.write("Starting server".padEnd(60, ".") + " ");
 	let server = app.listen(process.env.SERVER_PORT);

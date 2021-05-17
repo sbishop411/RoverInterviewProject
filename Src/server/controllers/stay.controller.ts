@@ -1,3 +1,4 @@
+/*
 import { Types } from "mongoose";
 import { StaySchema as Stays } from "../../shared/classes/stay";
 
@@ -151,3 +152,4 @@ export async function deleteStay(request, response)
         response.status(500).send({ message: "An error occurred while attempting to delete the stay." });
     }
 }
+*/
