@@ -1,7 +1,7 @@
-import { prop, Ref, queryMethod, modelOptions, ReturnModelType } from "@typegoose/typegoose";
+import { prop, Ref, queryMethod, ReturnModelType } from "@typegoose/typegoose";
 import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
 import { BaseEntity } from "./baseEntity";
-//import { Stay } from "./stay";
+import { Stay } from "./stay";
 
 interface QueryHelpers {
 	findByName: AsQueryMethod<typeof findByName>;
@@ -11,32 +11,23 @@ interface QueryHelpers {
 function findByName(this: ReturnModelType<typeof Owner, QueryHelpers>, name: string) {
 	return this.findOne({
         name: name
-    })/*.populate("_stays")*/;
+    });//.populate({ path: "_stays", model: Stay });
+	// TODO: When we include the call to .populate(), we get the error "Schema hasn't been registered for model 'Stay'.", though I'm not sure why. I've create issue #29 to resolve this.
 }
 
 function findMatching(this: ReturnModelType<typeof Owner, QueryHelpers>, other: Owner) {
-	return this.where({
-        Name: other.name,
-        PhoneNumber: other.phoneNumber,
-        EmailAddress: other.emailAddress,
-        Image: other.image
-    })/*.populate("_stays")*/;
+	return this.findOne({
+        name: other.name,
+        phoneNumber: other.phoneNumber,
+        emailAddress: other.emailAddress,
+        image: other.image
+    });//.populate({ path: "_stays", model: Stay });
 }
 
-//@pre()
-//@post()
-/*
-@modelOptions({
-	options: {
-		customName: "Owners"
-	},
-	schemaOptions: {
-		collection: "Owners"
-	}
-})
-*/
 @queryMethod(findByName)
 @queryMethod(findMatching)
+//@pre()
+//@post()
 export class Owner extends BaseEntity {
 	@prop({
 		required: [true, "The owner must have a name."],
@@ -63,38 +54,32 @@ export class Owner extends BaseEntity {
 	})
 	public emailAddress!: string;
 
-	/*
 	@prop({
-		ref: () => Stay,
-		default: []
+		required: false,
+		//ref: () => Stay,
+		ref: "Stay",
 	})
-	private _stays: Array<Ref<Stay>>;
-	*/
-
-	constructor(name: string, image: string, phoneNumber: string, emailAddress: string/*, stays?: Array<Ref<Stay>>*/) {
+	private _stays: Ref<Stay>[];
+	
+	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Ref<Stay>[]) {
 		super();
 		this.name = name;
 		this.image = image;
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
-		//this._stays = stays as Array<Ref<Stay>>;
+		this._stays = (stays === undefined || stays === null) ? new Array() : stays;
 	}
 
-	/*
-	get Stays(): Array<Ref<Stay>> {
+	get Stays(): Ref<Stay>[] {
 		return this._stays;
 	}
-	*/
 
-	/*
-	public addStay(stay: Stay): void
+	public addStay(this: Owner, stay: Stay): void
 	{
 		this._stays.push(stay);
 	}
-	*/
 
-	/*
-	public removeStay(stay: Stay): boolean
+	public removeStay(this: Owner, stay: Stay): boolean
 	{
 		let index: number = this._stays.indexOf(stay.id, 0);
 		if(index > -1) {
@@ -106,7 +91,6 @@ export class Owner extends BaseEntity {
 			return false;
 		}
 	}
-	*/
 
 	public toString(): string {
 		return `Name: \"${this.name}\", PhoneNumber: \"${this.phoneNumber}\", EmailAddress: \"${this.emailAddress}\"`;
@@ -120,6 +104,3 @@ export class Owner extends BaseEntity {
 			&& this.emailAddress == other.emailAddress;
 	}
 }
-
-//export const OwnerSchema = getModelForClass(Owner);
-//expect(OwnerSchema.modelName).to.be.equal("Owners");

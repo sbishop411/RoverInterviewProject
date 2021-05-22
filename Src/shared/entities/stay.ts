@@ -1,4 +1,4 @@
-import { prop, modelOptions, Ref, queryMethod, ReturnModelType } from "@typegoose/typegoose";
+import { prop, Ref, queryMethod, ReturnModelType } from "@typegoose/typegoose";
 import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
 import { BaseEntity } from "./baseEntity";
 import { Owner } from "./owner";
@@ -9,10 +9,10 @@ interface QueryHelpers {
 }
 
 function findMatching(this: ReturnModelType<typeof Stay, QueryHelpers>, other: Stay) {
-	return this.where({
+	return this.findOne({
         owner: other.owner,
         sitter: other.sitter,
-        dogs: other.dogs,
+		dogs: other.dogs,
         startDate: other.startDate,
 		endDate: other.endDate,
 		reviewText: other.reviewText,
@@ -20,25 +20,19 @@ function findMatching(this: ReturnModelType<typeof Stay, QueryHelpers>, other: S
     });
 }
 
-@modelOptions({
-	options: {
-		customName: "Stays"
-	},
-	schemaOptions: {
-		collection: "Stays"
-	}
-})
 @queryMethod(findMatching)
 export class Stay extends BaseEntity {
 	@prop({
 		require: [true, "The stay must be associated with an owner."],
 		ref: () => Owner,
+		//ref: "Owner",
 	})
 	public owner: Ref<Owner>;
 
 	@prop({
 		require: [true, "The stay must be associated with a sitter."],
 		ref: () => Sitter,
+		//ref: "Sitter",
 	})
 	public sitter: Ref<Sitter>;
 
@@ -80,19 +74,6 @@ export class Stay extends BaseEntity {
 		this.rating = rating;
 	}
 }
-
-
-//export const StaySchema = getModelForClass(Stay);
-//expect(StaySchema.modelName).to.be.equal("Stay");
-
-//export = getModelForClass(StaySchema);
-
-
-
-
-
-
-
 
 
 

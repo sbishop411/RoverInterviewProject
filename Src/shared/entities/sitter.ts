@@ -1,15 +1,30 @@
-import { prop, pre, modelOptions, Ref } from "@typegoose/typegoose";
+import { prop, pre, queryMethod, Ref, ReturnModelType } from "@typegoose/typegoose";
+import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
 import { BaseEntity } from "./baseEntity";
 import { Stay } from "./stay";
 
-@modelOptions({
-	options: {
-		customName: "Sitters"
-	},
-	schemaOptions: {
-		collection: "Sitters"
-	}
-})
+interface QueryHelpers {
+	findMatching: AsQueryMethod<typeof findMatching>;
+}
+
+function findByName(this: ReturnModelType<typeof Sitter, QueryHelpers>, name: string) {
+	return this.findOne({
+        name: name
+    });//.populate({ path: "_stays", model: Stay });
+	// TODO: When we include the call to .populate(), we get the error "Schema hasn't been registered for model 'Stay'.", though I'm not sure why. I've create issue #29 to resolve this.
+}
+
+function findMatching(this: ReturnModelType<typeof Sitter, QueryHelpers>, other: Sitter) {
+	return this.findOne({
+        name: other.name,
+        phoneNumber: other.phoneNumber,
+        emailAddress: other.emailAddress,
+        image: other.image
+    });//.populate({ path: "_stays", model: Stay });
+}
+
+@queryMethod(findByName)
+@queryMethod(findMatching)
 @pre<Sitter>("save", function(this: Sitter, next: any) {
 	this._ratingsScore = this.getRatingsScore()
 	this._overallSitterRank = this.getOverallSitterRank()
@@ -42,10 +57,12 @@ export class Sitter extends BaseEntity {
 	public emailAddress: string;
 
 	@prop({
-		ref: () => Stay,
-		default: []
+		required: false,
+		//ref: () => Stay
+		ref: "Stay"
+		//,default: []
 	})
-	private _stays: Array<Ref<Stay>>;
+	private _stays: Ref<Stay>[];
 
 	// Note: We need to actually store these calculated values since we'll be indexing on them.
 	@prop({})
@@ -54,7 +71,7 @@ export class Sitter extends BaseEntity {
 	@prop({})
 	private _ratingsScore: number;
 
-	get stays(): Array<Ref<Stay>> {
+	get stays(): Ref<Stay>[] {
 		return this._stays;
 	}
 
@@ -73,14 +90,15 @@ export class Sitter extends BaseEntity {
 		return (uniqueLetterCount / 26) * 5;
 	}
 
-	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Array<Ref<Stay>>) {
+	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Ref<Stay>[]) {
 		super();
 
 		this.name = name;
 		this.image = image;
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
-		this._stays = stays as Array<Ref<Stay>>;
+		//this._stays = stays as Array<Ref<Stay>>;
+		this._stays = (stays === undefined || stays === null) ? new Array() : stays;
 
 		//this.updateRatingsScore();
 		//this.updateOverallRank();
@@ -170,22 +188,10 @@ export class Sitter extends BaseEntity {
 	}
 }
 
-//export const SitterSchema = getModelForClass(Sitter);
-//expect(SitterSchema.modelName).to.be.equal("Sitters");
-
-
-
-
-
-//export = getModelForClass(SitterSchema);
-
-
-
 
 
 
 /*
-
 import mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 

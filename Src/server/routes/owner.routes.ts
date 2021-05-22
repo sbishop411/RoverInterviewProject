@@ -1,8 +1,7 @@
 import { Router, Request, Response } from "express";
 import * as mongoose from "mongoose";
-import { Owner } from "../../shared/classes/owner";
-import { OwnerSchema as Owners } from "../../shared/classes/schemas";
-
+import { Owner } from "../../shared/entities/owner";
+import { OwnerSchema as Owners } from "../../shared/schemas";
 
 export const OwnerRouter = Router();
 
@@ -50,7 +49,7 @@ OwnerRouter.get("/:ownerId", async (req: Request, res: Response): Promise<Respon
 		} else {
 			return res.status(200).send(owner);
 		}
-	} catch (e) {
+	} catch (e: any) {
 		console.error(e);
 		return res.status(500).send(e.message);
 	}
@@ -63,21 +62,21 @@ OwnerRouter.put("/:ownerId", async (req: Request, res: Response): Promise<Respon
 	
 	try
     {
-        let owner: Owner = await Owners.findOneAndReplace({ _id: new mongoose.Types.ObjectId(req.params.ownerId) }, req.body, { "new": true })
+		let owner: Owner = await Owners.findByIdAndUpdate(new mongoose.Types.ObjectId(req.params.ownerId), req.body, { "new": true, "overwrite": true })
 			.populate("Stays")
 			.exec() as Owner;  // TODO: May not need this line?
 
         return res.status(200).json(owner);
     }
-    catch (error)
+    catch (e: any)
     {
-        if (error.name === "ValidationError")
+        if (e.name === "ValidationError")
         {
             return res.status(400).send({ message: "The supplied owner is invalid, and cannot be used to replace the owner." });
         }
         else
         {
-            console.error(error);
+            console.error(e);
             return res.status(500).send({ message: "An error occurred while attempting to replace the owner." });
         }
     }
@@ -90,21 +89,21 @@ OwnerRouter.patch("/:ownerId", async (req: Request, res: Response): Promise<Resp
 
     try
     {
-		let owner = await Owners.findByIdAndUpdate(new mongoose.Types.ObjectId(req.params.ownerId), req.body, { "new": true })
+		let owner: Owner = await Owners.findByIdAndUpdate(new mongoose.Types.ObjectId(req.params.ownerId), req.body, { "new": true, "overwrite": false })
 			.populate("Stays")
 			.exec() as Owner;  // TODO: May not need this line?
 
         return res.status(200).json(owner);
     }
-    catch (error)
+    catch (e: any)
     {
-        if (error.name === "ValidationError")
+        if (e.name === "ValidationError")
         {
             return res.status(400).send({ message: "The supplied owner data is invalid, so the owner cannot be updated." });
         }
         else
         {
-            console.error(error);
+            console.error(e);
             return res.status(500).send({ message: "An error occurred while attempting to update the owner." });
         }
     }
@@ -120,9 +119,9 @@ OwnerRouter.delete("/:ownerId", async (req: Request, res: Response): Promise<Res
         await Owners.findByIdAndDelete(new mongoose.Types.ObjectId(req.params.ownerId));
         return res.status(204).send({ message: "Owner successfully deleted." });
     }
-    catch (error)
+    catch (e: any)
     {
-        console.error(error);
+        console.error(e);
         return res.status(500).send({ message: "An error occurred while attempting to delete the owner." });
     }
 });

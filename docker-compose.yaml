@@ -15,7 +15,7 @@ services:
             - "${MONGO_INITDB_PORT}:${MONGO_INITDB_PORT}"
         volumes:
             - "mongodb-data:/data/db"
-            - "./config/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh"
+            - "./config/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js"
         command: --port ${MONGO_INITDB_PORT} --auth
         networks:
             - network
@@ -45,13 +45,14 @@ services:
         depends_on:
             - "MongoDB"
         environment:
-            - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@MongoDB:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}
+            - MONGODB_CONNECTION_STRING=mongodb://${MONGO_SERVER_USERNAME}:${MONGO_SERVER_PASSWORD}@MongoDB:${MONGO_INITDB_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin
             - MONGO_INITDB_DATABASE
             - MONGO_INITDB_PORT
             - MONGO_SERVER_USERNAME
             - MONGO_SERVER_PASSWORD
             - SERVER_PORT
             - FORCE_COLOR=1
+            - NODE_ENV
         ports:
             - "${SERVER_PORT}:${SERVER_PORT}"
         networks:
