@@ -10,30 +10,28 @@ interface QueryHelpers {
 
 function findByName(this: ReturnModelType<typeof Owner, QueryHelpers>, name: string) {
 	return this.findOne({
-        name: name
+        fullName: name
     });//.populate({ path: "_stays", model: Stay });
 	// TODO: When we include the call to .populate(), we get the error "Schema hasn't been registered for model 'Stay'.", though I'm not sure why. I've create issue #29 to resolve this.
 }
 
 function findMatching(this: ReturnModelType<typeof Owner, QueryHelpers>, other: Owner) {
 	return this.findOne({
-        name: other.name,
+        fullName: other.fullName,
         phoneNumber: other.phoneNumber,
         emailAddress: other.emailAddress,
         image: other.image
-    });//.populate({ path: "_stays", model: Stay });
+    }).populate({ path: "_stays", model: Stay });
 }
 
 @queryMethod(findByName)
 @queryMethod(findMatching)
-//@pre()
-//@post()
 export class Owner extends BaseEntity {
 	@prop({
 		required: [true, "The owner must have a name."],
 		trim: true,
 	})
-	public name!: string;
+	public fullName!: string;
 
 	@prop({
 		required: false,
@@ -56,14 +54,13 @@ export class Owner extends BaseEntity {
 
 	@prop({
 		required: false,
-		//ref: () => Stay,
-		ref: "Stay",
+		ref: () => Stay,
 	})
 	private _stays: Ref<Stay>[];
 	
 	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Ref<Stay>[]) {
 		super();
-		this.name = name;
+		this.fullName = name;
 		this.image = image;
 		this.phoneNumber = phoneNumber;
 		this.emailAddress = emailAddress;
@@ -79,6 +76,14 @@ export class Owner extends BaseEntity {
 		this._stays.push(stay);
 	}
 
+	/*
+	public async addStayAndSave(stay: Stay): Promise<void>
+	{
+		this._stays.push(stay);
+		await this.save();
+	}
+	*/
+
 	public removeStay(this: Owner, stay: Stay): boolean
 	{
 		let index: number = this._stays.indexOf(stay.id, 0);
@@ -93,12 +98,12 @@ export class Owner extends BaseEntity {
 	}
 
 	public toString(): string {
-		return `Name: \"${this.name}\", PhoneNumber: \"${this.phoneNumber}\", EmailAddress: \"${this.emailAddress}\"`;
+		return `Name: \"${this.fullName}\", PhoneNumber: \"${this.phoneNumber}\", EmailAddress: \"${this.emailAddress}\"`;
 	}
 
 	public equals(other: Owner): boolean
 	{
-		return this.name == other.name
+		return this.fullName == other.fullName
 			&& this.image == other.image
 			&& this.phoneNumber == other.phoneNumber
 			&& this.emailAddress == other.emailAddress;

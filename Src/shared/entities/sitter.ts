@@ -1,41 +1,184 @@
-import { prop, pre, queryMethod, Ref, ReturnModelType } from "@typegoose/typegoose";
+import { prop, pre, queryMethod, Ref, ReturnModelType, modelOptions } from "@typegoose/typegoose";
 import { AsQueryMethod } from "@typegoose/typegoose/lib/types";
+import { SitterModel, StayModel } from "../schemas";
 import { BaseEntity } from "./baseEntity";
 import { Stay } from "./stay";
 
+// TODO: There's an absolutely ridiculous amount of duplicated code in here revolving around updating the _ratingsScore and _overallSitterRank.
+// Mongoose is utter crap, so it may actually be impossible for us to abstract this away. I've done the best I can with the getRatingsScore()
+// and getOverallSitterRank() static methods, but even the data we pass into them is garbage in most cases.
 interface QueryHelpers {
 	findMatching: AsQueryMethod<typeof findMatching>;
 }
 
 function findByName(this: ReturnModelType<typeof Sitter, QueryHelpers>, name: string) {
 	return this.findOne({
-        name: name
-    });//.populate({ path: "_stays", model: Stay });
+        fullName: name
+    }).populate({ path: "stays", model: Stay })
+	.populate("sitterScore")
+	.populate("ratingsScore")
+	.populate("overallSitterRank");
 	// TODO: When we include the call to .populate(), we get the error "Schema hasn't been registered for model 'Stay'.", though I'm not sure why. I've create issue #29 to resolve this.
 }
 
 function findMatching(this: ReturnModelType<typeof Sitter, QueryHelpers>, other: Sitter) {
 	return this.findOne({
-        name: other.name,
+        fullName: other.fullName,
         phoneNumber: other.phoneNumber,
         emailAddress: other.emailAddress,
         image: other.image
-    });//.populate({ path: "_stays", model: Stay });
+    }).populate({ path: "stays", model: Stay })
+	.populate("sitterScore")
+	.populate("ratingsScore")
+	.populate("overallSitterRank");
 }
 
 @queryMethod(findByName)
 @queryMethod(findMatching)
-@pre<Sitter>("save", function(this: Sitter, next: any) {
-	this._ratingsScore = this.getRatingsScore()
-	this._overallSitterRank = this.getOverallSitterRank()
+@modelOptions({
+	schemaOptions: {
+		toJSON: { virtuals: true },
+		toObject: { virtuals: true }
+	}
+})
+/*
+@pre<Sitter>("save", async function(this: Sitter, next: any) {
+console.log("=====pre-save middleware triggered.");
+	// The _stays for this sitter aren't populated(), so we need to do so manually to ensure accuracy. Mongoose sucks a LOT.
+	
+	if(this._stays === undefined || this._stays === null || this._stays.length < 1 ) {
+		this._stays = await StayModel.find({ sitter: this.id }).exec();
+	}
+
+	this._ratingsScore = Sitter.getRatingsScoreFromSitter(this);
+	this._overallSitterRank = Sitter.getOverallSitterRankFromSitter(this);
 	next();
 })
+@pre<Sitter>("update", async function(next: any) {
+
+	console.log("=====pre-findOneandUpdate middleware triggered.");
+	console.log(`-----typeof this.getUpdate()._update: ${typeof this.getUpdate()._update}`);
+	console.log(`-----this.getUpdate()._update: ${this.getUpdate()._update}`);
+	console.log(`-----(await this).id: ${(await this).id}`);
+	console.log(`-----this.getFilter()._id: ${this.getFilter()._id}`);
+	console.log(`-----this.getFilter().name: ${this.getFilter().name}`);
+	console.log(`-----this.getUpdate()._id: ${this.getUpdate()._id}`);
+	console.log(`-----this.getUpdate().name: ${this.getUpdate().name}`);
+		
+		
+		let thisSitter: Sitter | null;
+	
+		if (this.getFilter()._id !== undefined && this.getFilter()._id !== null ) {
+			thisSitter = await SitterModel.findById(this.getFilter()._id).populate("_stays").exec();
+		} else if (this.getFilter().name !== undefined && this.getFilter().name !== null) {
+			thisSitter = await SitterModel.findOne({ name: this.getFilter().name }).populate("_stays").exec();
+		} else {
+			thisSitter = null;
+		}
+	
+		if (thisSitter === null) {
+			console.log("*****In findOneAndUpdate middleware, but neither _id or name were used in the query.");
+			next();
+		} else {
+			let newRatingsScore: number = Sitter.getRatingsScore(thisSitter.stays);
+			this.getUpdate()._update.$set._ratingsScore = Sitter.getRatingsScore(thisSitter.stays);
+			this.getUpdate()._update.$set._overallSitterRank = Sitter.getOverallSitterRank(thisSitter.stays, SitterModel.getSitterScoreFromName(thisSitter.fullName), newRatingsScore);
+			next();
+		}
+
+
+
+})
+// These next two should be identical since you can't access the document being updated in either.
+@pre<Sitter>("updateOne", async function(this: mongoose.Query<any>, next: any) {
+
+	console.log("=====pre-findOneandUpdate middleware triggered.");
+	console.log(`-----typeof this.getUpdate()._update: ${typeof this.getUpdate()._update}`);
+	console.log(`-----this.getUpdate()._update: ${this.getUpdate()._update}`);
+	console.log(`-----(await this).id: ${(await this).id}`);
+	console.log(`-----this.getFilter()._id: ${this.getFilter()._id}`);
+	console.log(`-----this.getFilter().name: ${this.getFilter().name}`);
+	console.log(`-----this.getUpdate()._id: ${this.getUpdate()._id}`);
+	console.log(`-----this.getUpdate().name: ${this.getUpdate().name}`);
+		
+		
+		let thisSitter: Sitter | null;
+	
+		if (this.getFilter()._id !== undefined && this.getFilter()._id !== null ) {
+			thisSitter = await SitterModel.findById(this.getFilter()._id).populate("_stays").exec();
+		} else if (this.getFilter().name !== undefined && this.getFilter().name !== null) {
+			thisSitter = await SitterModel.findOne({ name: this.getFilter().name }).populate("_stays").exec();
+		} else {
+			thisSitter = null;
+		}
+	
+		if (thisSitter === null) {
+			console.log("*****In findOneAndUpdate middleware, but neither _id or name were used in the query.");
+			next();
+		} else {
+			let newRatingsScore: number = Sitter.getRatingsScore(thisSitter.stays);
+			this.getUpdate()._update.$set._ratingsScore = Sitter.getRatingsScore(thisSitter.stays);
+			this.getUpdate()._update.$set._overallSitterRank = Sitter.getOverallSitterRank(thisSitter.stays, SitterModel.getSitterScoreFromName(thisSitter.fullName), newRatingsScore);
+			next();
+		}
+
+})
+@pre<Sitter>("findOneAndUpdate", async function(next: any) {
+console.log("=====pre-findOneandUpdate middleware triggered.");
+	let updateDoc = this.getUpdate();
+	let filter = this.getFilter();
+console.log(`-----filter._id: ${filter._id}`);
+console.log(`-----filter.name: ${filter.name}`);
+
+	let thisSitter: mongoose.Document | null
+
+try {
+
+	if (filter._id !== undefined && filter._id !== null ) {
+		thisSitter = await SitterModel.findById(filter._id).populate("_stays").exec();
+	} else if (filter.name !== undefined && filter.name !== null) {
+		thisSitter = await SitterModel.findOne({ name: filter.name }).populate("_stays").exec();
+	} else {
+		thisSitter = null;
+	}
+
+ 
+
+
+} catch (e) {
+	console.log("+++++Issue in findOneAndUpdate while searching for sitter matching the query filter.");
+	console.log(e);
+	throw e;
+}
+
+
+
+	if (thisSitter === null) {
+		console.log("*****In findOneAndUpdate middleware, but neither _id or name were used in the query.");
+		next();
+	} else {
+		
+try {
+		let newRatingsScore: number = Sitter.getRatingsScore(thisSitter.stays);
+		updateDoc._update.$set._ratingsScore = Sitter.getRatingsScore(thisSitter.stays);
+		updateDoc._update.$set._overallSitterRank = Sitter.getOverallSitterRank(thisSitter.stays, SitterModel.getSitterScoreFromName(thisSitter.fullName), newRatingsScore);
+
+} catch (e) {
+	console.log("+++++Issue in findOneAndUpdate while getting new values.");
+	console.log(e);
+	throw e;
+}
+
+		next();
+	}
+})
+*/
 export class Sitter extends BaseEntity {
 	@prop({
 		required: [true, "The sitter must have a name."],
 		trim: true,
 	})
-	public name: string;
+	public fullName: string;
 
 	@prop({
 		required: false,
@@ -56,123 +199,141 @@ export class Sitter extends BaseEntity {
 	})
 	public emailAddress: string;
 
+/*
 	@prop({
 		required: false,
-		//ref: () => Stay
-		ref: "Stay"
-		//,default: []
+		ref: () => Stay,
+		default: new Array<Stay>()
 	})
-	private _stays: Ref<Stay>[];
+	private _stays: Array<Ref<Stay>>;
+*/
 
-	// Note: We need to actually store these calculated values since we'll be indexing on them.
-	@prop({})
-	private _overallSitterRank: number;
+	@prop({
+		ref: () => Stay,
+		foreignField: 'sitter', // compare this value to the local document populate is called on
+		localField: '_id' // compare this to the foreign document's value defined in "foreignField"
+	})
+	public stays: Ref<Stay>[] = new Array<Ref<Stay>>();
 
-	@prop({})
-	private _ratingsScore: number;
-
-	get stays(): Ref<Stay>[] {
+	/*
+	get stays(): Array<Ref<Stay>> {
 		return this._stays;
-	}
+	}*/
 
-	get overallSitterRank(): number {
-		return this._overallSitterRank;
-	}
-
-	get ratingsScore(): number {
-		return this._ratingsScore;
-	}
-
-	get sitterScore(): number {
-		let preparedName: string = this.name ? this.name.toLowerCase().replace(/[^a-z0-9]/gi, "") : "";
+	public get sitterScore(): number {
+		let preparedName: string = this.fullName ? this.fullName.toLowerCase().replace(/[^a-z0-9]/gi, "") : "";
 		let uniqueLetterCount: number = new Set(preparedName.split("")).size;
-		
 		return (uniqueLetterCount / 26) * 5;
 	}
 
-	constructor(name: string, image: string, phoneNumber: string, emailAddress: string, stays?: Ref<Stay>[]) {
-		super();
-
-		this.name = name;
-		this.image = image;
-		this.phoneNumber = phoneNumber;
-		this.emailAddress = emailAddress;
-		//this._stays = stays as Array<Ref<Stay>>;
-		this._stays = (stays === undefined || stays === null) ? new Array() : stays;
-
-		//this.updateRatingsScore();
-		//this.updateOverallRank();
-		this._ratingsScore = this.getRatingsScore();
-		this._overallSitterRank = this.getOverallSitterRank();
-	}
-
-	/*
-	updateRatingsScore(): void {
-		if (this._stays.length == 0)
-		{
-			this._ratingsScore = 0;
-		}
-		else
-		{
-			let ratingsSum: number = this._stays
-				.map(stay => (stay as Stay).rating)         // TODO: We need to somehow resolve this Ref<Stay, ObjectId> into the actual Stay itself. What gives?
-				.reduce((runningTotal, rating) => (runningTotal + rating));
-			
-			this._ratingsScore = (ratingsSum / this._stays.length);
-		}
-	}
-*/
-
-
-	getRatingsScore(): number {
-		if (this._stays.length == 0)
-		{
+	public get ratingsScore(): number {
+		if(this.stays === undefined || this.stays === null || this.stays.length < 1) {
 			return 0;
-		}
-		else
-		{
-			let ratingsSum: number = this._stays
+		} else {
+			let ratingsSum: number = this.stays
 				.map(stay => (stay as Stay).rating)         // TODO: We need to somehow resolve this Ref<Stay, ObjectId> into the actual Stay itself. What gives?
 				.reduce((runningTotal, rating) => (runningTotal + rating));
 			
-			return (ratingsSum / this._stays.length);
+			return (ratingsSum / this.stays.length);
 		}
 	}
 
-/*
-	updateOverallRank(): void {
-		// If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
-		if (this._stays.length == 0)
-		{
-			this._overallSitterRank = this.SitterScore;
-		}
-		else
-		{
-			let ratingWeight = this._stays.length < 10 ? (this._stays.length / 10) : 1;
-			this._overallSitterRank = (this.SitterScore * (1 - ratingWeight)) + (this._ratingsScore * ratingWeight);
-		}
-	}
-*/
-
-	getOverallSitterRank(): number {
-		// If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
-		if (this._stays.length == 0)
+	public get overallSitterRank(): number {
+		if (this.stays.length < 1)
 		{
 			return this.sitterScore;
 		}
 		else
 		{
-			let ratingWeight = this._stays.length < 10 ? (this._stays.length / 10) : 1;
-			return (this.sitterScore * (1 - ratingWeight)) + (this._ratingsScore * ratingWeight);
+			let ratingWeight = this.stays.length < 10 ? (this.stays.length / 10) : 1;
+			return (this.sitterScore * (1 - ratingWeight)) + (this.ratingsScore * ratingWeight);
 		}
 	}
 
+	
+
+	
+
+	constructor(name: string, image: string, phoneNumber: string, emailAddress: string/*, stays?: Ref<Stay>[]*/) {
+		super();
+
+		this.fullName = name;
+		this.image = image;
+		this.phoneNumber = phoneNumber;
+		this.emailAddress = emailAddress;
+		//this.stays = (stays === undefined || stays === null) ? new Array() : stays;
+	}
+
+	/*
+	public recalculateScores(): void {
+		
+		console.log(`Recalculating sitter scores for ${this.name}`);
+		
+		let newRatingsScore = Sitter.getRatingsScore(this);
+		console.log(`____Old Ratings Score: ${this._ratingsScore}`);
+		console.log(`____New Ratings Score: ${newRatingsScore}`);
+		this._ratingsScore = newRatingsScore;
+
+		//let newOverallSitterRank = this.getOverallSitterRank();
+		let newOverallSitterRank = Sitter.getOverallSitterRank(this);
+		console.log(`____Old Sitter Rank: ${this._overallSitterRank}`);
+		console.log(`____New Sitter Rank: ${newOverallSitterRank}`);
+		this._overallSitterRank = newOverallSitterRank;
+	}
+	*/
+	
+	//static getRatingsScore(stays: Stay[] = []): number {
+
+
+	/*
+	static getSitterScoreFromName(name: string) {
+		let preparedName: string = name.toLowerCase().replace(/[^a-z0-9]/gi, "");
+		let uniqueLetterCount: number = new Set(preparedName.split("")).size;
+		return (uniqueLetterCount / 26) * 5;
+	}
+
+	static getRatingsScore(stays: Ref<Stay, mongoose.Types.ObjectId | undefined>[]): number {	
+		if(stays === undefined || stays === null || stays.length < 1) {
+			return 0;
+		} else {
+			let ratingsSum: number = stays
+				.map(stay => (stay as Stay).rating)         // TODO: We need to somehow resolve this Ref<Stay, ObjectId> into the actual Stay itself. What gives?
+				.reduce((runningTotal, rating) => (runningTotal + rating));
+			
+			return (ratingsSum / stays.length);
+		}
+	}
+	
+	static getRatingsScoreFromSitter(sitter: Sitter): number {
+		return SitterModel.getRatingsScore(sitter._stays);
+	}
+
+	static getOverallSitterRank(stays: Ref<Stay, mongoose.Types.ObjectId | undefined>[], sitterScore: number, ratingsScore: number): number {
+		// If the sitter has no Stays, then the OverallSitterRank is just their SitterScore.
+		if (stays === undefined || stays === null || stays.length < 1)
+		{
+			return sitterScore;
+		}
+		else
+		{
+			let ratingWeight = stays.length < 10 ? (stays.length / 10) : 1;
+			return (sitterScore * (1 - ratingWeight)) + (ratingsScore * ratingWeight);
+		}
+	}
+
+	static getOverallSitterRankFromSitter(sitter: Sitter): number {
+		return SitterModel.getOverallSitterRank(sitter._stays, sitter.sitterScore, sitter._ratingsScore);
+	}
+	*/
+	
+
+	/*
 	// TODO: Maybe change the return type of this to boolean to return success/fail information.
 	addStay(stay: Stay): void
 	{
 		this._stays.push(stay);
-		this._ratingsScore = this.getRatingsScore()
-		this._overallSitterRank = this.getOverallSitterRank()
+		//this._ratingsScore = Sitter.getRatingsScoreFromSitter(this);
+		//this._overallSitterRank = Sitter.getOverallSitterRankFromSitter(this);
 	}
 
 	//TODO: Need to figure out what the best way to remove a Stay will be. By its ID?
@@ -182,10 +343,13 @@ export class Sitter extends BaseEntity {
 		if(index > -1) {
 			this._stays.splice(index, 0);
 		}
-
-		this._ratingsScore = this.getRatingsScore()
-		this._overallSitterRank = this.getOverallSitterRank()
+		//this._ratingsScore = Sitter.getRatingsScoreFromSitter(this);
+		//this._overallSitterRank = Sitter.getOverallSitterRankFromSitter(this);
 	}
+*/
+
+
+
 }
 
 
@@ -313,15 +477,4 @@ SitterSchema.methods.toString = function ()
     return `Name: \"${this.Name}\", PhoneNumber: \"${this.PhoneNumber}\", EmailAddress: \"${this.EmailAddress}\"`;
 }
 
-SitterSchema.query.findMatching = function (other)
-{
-    return this.where({
-        Name: other.Name,
-        PhoneNumber: other.PhoneNumber,
-        EmailAddress: other.EmailAddress,
-        Image: other.Image
-    }).populate("Stays");
-}
-
-export = mongoose.model("Sitter", SitterSchema);
 */

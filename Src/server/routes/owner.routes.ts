@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import * as mongoose from "mongoose";
 import { Owner } from "../../shared/entities/owner";
-import { OwnerSchema as Owners } from "../../shared/schemas";
+import { OwnerModel as Owners } from "../../shared/schemas";
 
 export const OwnerRouter = Router();
 

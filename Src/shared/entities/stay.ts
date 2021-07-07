@@ -25,14 +25,12 @@ export class Stay extends BaseEntity {
 	@prop({
 		require: [true, "The stay must be associated with an owner."],
 		ref: () => Owner,
-		//ref: "Owner",
 	})
 	public owner: Ref<Owner>;
 
 	@prop({
 		require: [true, "The stay must be associated with a sitter."],
 		ref: () => Sitter,
-		//ref: "Sitter",
 	})
 	public sitter: Ref<Sitter>;
 

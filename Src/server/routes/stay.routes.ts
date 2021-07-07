@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import * as mongoose from "mongoose";
 import { DocumentType } from "@typegoose/typegoose";
 import { Stay } from "../../shared/entities/stay";
-import { StaySchema as Stays } from "../../shared/schemas";
+import { StayModel as Stays } from "../../shared/schemas";
 
 export const StayRouter = Router();
 

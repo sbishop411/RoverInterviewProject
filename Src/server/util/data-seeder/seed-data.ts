@@ -2,8 +2,9 @@ import path from "path";
 import fs from "fs";
 import csvParse from "csv-parse";
 import chalk from "chalk";
+import mongoose from "mongoose";
 import { ScrapedReview } from "./scraped-review";
-import { OwnerSchema as Owners, SitterSchema as Sitters, StaySchema as Stays } from "../../../shared/schemas";
+import { OwnerModel, SitterModel, StayModel } from "../../../shared/schemas";
 import { Owner } from "../../../shared/entities/owner";
 import { Sitter } from "../../../shared/entities/sitter";
 import { Stay } from "../../../shared/entities/stay";
@@ -54,69 +55,128 @@ var saveData = async function (reviews: ScrapedReview[])
 	let sitterSkippedCount: number = 0;
 	let staySkippedCount: number = 0;
 
+console.log("================================ Adding Records ================================");
+let counter: number = 0;
+	
 	// TODO: Is there any way we can improve the type safety of 'review' in this for...of loop?
 	for (let review of reviews)
 	{
-		let ownerSearchResult: Owner = await Owners.find().findMatching(review.owner).exec() as Owner;
-		let sitterSearchResult: Sitter = await Sitters.find().findMatching(review.sitter).exec() as Sitter;
-	
+console.log(`Working on review ${counter}.` + ` Owner: ${review.ownerName}`.padEnd(20) + `Sitter: ${review.sitterName}`.padEnd(20));
+		let ownerForStay: Owner;
+		let sitterForStay: Sitter;
+
+try {
+console.log(`____Attempting to find Owner ${review.ownerName}.`);
+		let ownerSearchResult: Owner | null = await OwnerModel.findOne({
+			fullName: review.ownerName,
+			phoneNumber: review.ownerPhoneNumber,
+			emailAddress: review.ownerEmailAddress
+		}).exec();
+
 		if (ownerSearchResult === undefined || ownerSearchResult === null)
 		{
-			let createdOwner: Owner = await Owners.create({
-				name: review.owner.name,
-				phoneNumber: review.owner.phoneNumber,
-				emailAddress: review.owner.emailAddress,
-				image: review.owner.image
+console.log(`____Unable to find Owner ${review.ownerName}, adding.`);
+			ownerForStay = await OwnerModel.create({
+				fullName: review.ownerName,
+				phoneNumber: review.ownerPhoneNumber,
+				emailAddress: review.ownerEmailAddress,
+				image: review.ownerImage,
 			});
 
-			review.stay.owner = createdOwner;
 			ownerAddedCount++;
 		} else {
-			review.stay.owner = ownerSearchResult;
+console.log(`____Found Owner ${review.ownerName}, will add this stay to them in a moment.`);
+			ownerForStay = ownerSearchResult;
 			ownerSkippedCount++;
 		}
 
+
+} catch (e) {
+	console.log(chalk.red("An issue occurred while adding an owner:"));
+	console.log(e);
+	throw e;
+}
+
+try {
+console.log(`____Attempting to find Sitter ${review.sitterName}.`);
+		let sitterSearchResult: Sitter | null = await SitterModel.findOne({
+			fullName: review.sitterName,
+			phoneNumber: review.sitterPhoneNumber,
+			emailAddress: review.sitterEmailAddress
+		}).exec();
+
 		if (sitterSearchResult === undefined || sitterSearchResult === null)
 		{
-			let createdSitter: Sitter = await Sitters.create({
-				name: review.sitter.name,
-				phoneNumber: review.sitter.phoneNumber,
-				emailAddress: review.sitter.emailAddress,
-				image: review.sitter.image
+console.log(`____Unable to find Sitter ${review.sitterName}, adding.`);
+
+			sitterForStay = await SitterModel.create({
+				fullName: review.sitterName,
+				phoneNumber: review.sitterPhoneNumber,
+				emailAddress: review.sitterEmailAddress,
+				image: review.sitterImage,
+				stays: []
 			});
 
-			review.stay.sitter = createdSitter;
+
 			sitterAddedCount++;
 		} else {
-			review.stay.sitter = sitterSearchResult;
+console.log(`____Found Sitter ${review.sitterName}, will add this stay to them in a moment.`);
+			sitterForStay = sitterSearchResult;
 			sitterSkippedCount++;
 		}
+} catch (e) {
+	console.log(chalk.red("An issue occurred while adding a sitter:"));
+	console.log(e);
+	throw e;
+}
 
-		let staySearchResult: Stay = await Stays.find().findMatching(review.stay).exec() as Stay;
+try {
+console.log(`____Attempting to find Stay ${counter}.`);
+		let staySearchResult: Stay | null = await StayModel.findOne({
+			owner: ownerForStay.id,
+			sitter: sitterForStay.id,
+			dogs: review.stayDogs,
+			startDate: review.stayStartDate,
+			endDate: review.stayEndDate,
+			reviewText: review.stayReviewText,
+			rating: review.stayRating
+		}).exec();
 
 		if (staySearchResult === undefined || staySearchResult === null)
 		{
-			let newStay: Stay = await Stays.create({
-				owner: review.stay.owner,
-				sitter: review.stay.sitter,
-				dogs: review.stay.dogs,
-				startDate: review.stay.startDate,
-				endDate: review.stay.endDate,
-				reviewText: review.stay.reviewText,
-				rating: review.stay.rating
+console.log(`____Unable to find Stay ${counter}, adding.`);
+			let newStay = await StayModel.create({
+				owner: ownerForStay,
+				sitter: sitterForStay.id as mongoose.Types.ObjectId,
+				dogs: review.stayDogs,
+				startDate: review.stayStartDate,
+				endDate: review.stayEndDate,
+				reviewText: review.stayReviewText,
+				rating: review.stayRating,
 			});
 
-			// Add a reference to the newly created Stay the the associated Owner and Sitter.
-			// TODO: Determine if it's possible to accomplish this through pre- and post-hooks on the Stay model.
-			await Owners.findByIdAndUpdate(review.stay.owner.id, { $push: { _stays: newStay.id } });
-			await Sitters.findByIdAndUpdate(review.stay.sitter.id, { $push: { _stays: newStay.id } });
+console.log(`____Pushing stay ${counter} onto Owner ${review.ownerName}.`);
+			ownerForStay.addStay(newStay);
+console.log(`____Saving updated document for ${review.ownerName}.`);
+			await OwnerModel.findByIdAndUpdate(ownerForStay.id, ownerForStay);
+
+//console.log(`____Pushing stay ${counter} onto Sitter ${review.sitterName}.`);
+			//sitterForStay.addStay(newStay);
+//console.log(`____Saving updated document for ${review.sitterName}.`);
+//			await SitterModel.findByIdAndUpdate(sitterForStay.id, sitterForStay);
 
 			stayAddedCount++;
 		}
 		else
 		{
+console.log(`____Found Stay ${counter}, skipping add.`);
 			staySkippedCount++;
 		}
+} catch (e) {
+	console.log(chalk.red("An issue occurred while adding a stay:"));
+	console.log(e);
+	throw e;
+}
 	}
 	
 	console.log(chalk.green("done.") + " Results:");

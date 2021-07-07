@@ -1,17 +1,23 @@
 import * as mongoose from "mongoose";
-import { prop, buildSchema } from "@typegoose/typegoose";
+import { pre, post, prop, buildSchema } from "@typegoose/typegoose";
 
 // TODO: The front-end shouldn't rely on this class, since that will tightly couple it with mongoose/typegoose.
+@pre<BaseEntity>("save", function(this: BaseEntity, next: any) {
+	this.updatedDate = new Date(Date.now());
+	next();
+})
 export abstract class BaseEntity {
 	@prop({
-		required: false
+		required: false,
+		default: Date.now()
 	})
-	createdDate?: Date;
+	public createdDate?: Date;
 
 	@prop({
-		required: false
+		required: false,
+		default: Date.now()
 	})
-	updatedDate?: Date;
+	public updatedDate?: Date;
 
 	id?: mongoose.Types.ObjectId;
 
